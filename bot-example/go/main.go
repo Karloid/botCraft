@@ -23,8 +23,9 @@ func main() {
 	if *token == "" {
 		log.Fatalf("Empty token")
 	}
+	log.Println("token is=", *token)
 
-	bsApi := api.New("https://api.bot-games.fun/game/semaphore")
+	bsApi := api.New("http://localhost:10000/game")
 
 	if *gameId == "" {
 		log.Println("Waiting opponent")
