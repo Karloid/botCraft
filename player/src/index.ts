@@ -3,8 +3,10 @@ import {TextGeometry} from "three/examples/jsm/geometries/TextGeometry"
 import {Controller, GUI} from 'three/examples/jsm/libs/lil-gui.module.min'
 import {Font, FontLoader} from "three/examples/jsm/loaders/FontLoader"
 import fontJson from './assets/Roboto_Regular.json'
-import {semaphore} from "./proto/semaphore"
-import State = semaphore.State
+import {botCraft} from "./proto/botCraft"
+import State = botCraft.State;
+import Options = botCraft.Options;
+import EntityType = botCraft.EntityType;
 
 type GamesDataActionV1 = {
     data: number[]
@@ -34,12 +36,13 @@ type GamesDataGameV1 = {
     ts: string
     participants: GamesDataGameUserV1[]
     winner: number
-    options: number[]
+    options: string
     ticks: GamesDataTickV1[]
 }
 
 export class Player {
     private readonly container: HTMLElement
+    private readonly options: Options
     private readonly ticks: Array<State>
     private readonly participants: GamesDataGameUserV1[]
     private readonly winner: number
@@ -57,11 +60,22 @@ export class Player {
     private curUserPointer: THREE.Mesh
 
     constructor(container: HTMLElement, gameData: GamesDataGameV1) {
+        console.log("Hello world")
         this.container = container
         container.style.height = (container.clientWidth / 2).toString().concat('px')
 
+        this.options = Options.decode(Uint8Array.from(window.atob(gameData.options), (v) => v.charCodeAt(0)));
+
+        this.options.entityProperties.forEach((entity, i) => {
+            console.log("entity: entityType=", entity.entityType, EntityType[entity.entityType], "maxHealth=", entity.maxHealth, "...")
+        })
+        console.log("options: mapSize=", this.options.mapSize,)
+
         this.ticks = gameData.ticks.map(t => {
             return State.decode(Uint8Array.from(window.atob(t.state), (v) => v.charCodeAt(0)))
+        })
+        this.ticks.forEach((tick, i) => {
+            console.log("tick: tick=", i, "tickId=", tick.tick, "entityCount=", tick.entities.length)
         })
 
         this.participants = gameData.participants
@@ -86,6 +100,7 @@ export class Player {
     }
 
     private initScene() {
+
         this.scene.add(new THREE.AmbientLight(0xffffff, 0.4))
 
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6)
@@ -103,6 +118,7 @@ export class Player {
             new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, -1),
             new THREE.Vector3(0.5, 0, 1), new THREE.Vector3(0.5, 0, -1),
             new THREE.Vector3(1, 0, 1), new THREE.Vector3(1, 0, -1),
+            new THREE.Vector3(0, 0, 0), new THREE.Vector3(1, 0, 1),
         ])
 
         const gridMaterial = new THREE.LineBasicMaterial({color: 0x888888})
@@ -111,14 +127,15 @@ export class Player {
         lines.translateX(-75)
         this.scene.add(lines)
 
-        this.ticks[this.ticks.length - 1].field.forEach((cell, i) => {
-            const piece = this.newPiece()
-            piece.position.set(-131.5 + (i % 4) * 37.5, 0, -33.5 + Math.floor(i / 4) * 33.5)
-            this.scene.add(piece)
-            this.pieces[i] = piece
-        })
+        /*   this.ticks[this.ticks.length - 1].field.forEach((cell, i) => {
+               const piece = this.newPiece()
+               piece.position.set(-131.5 + (i % 4) * 37.5, 0, -33.5 + Math.floor(i / 4) * 33.5)
+               this.scene.add(piece)
+               this.pieces[i] = piece
+           })*/
 
         this.participants.forEach((p, i) => {
+            console.log("participants forEach world=", p, i)
             const t = this.newText(
                 p.user.name || p.user.gh_login,
                 this.winner > 0 && i + 1 == this.winner
@@ -203,37 +220,41 @@ export class Player {
             .name('Current tick')
             .listen()
             .onChange(() => {
-                this.ticks[this.settings.curTick].field.forEach((cell, i) => {
-                    const piece = this.pieces[i]
-                    if (!piece)
-                        return
+                /*
+                                this.ticks[this.settings.curTick].field.forEach((cell, i) => {
+                                    const piece = this.pieces[i]
+                                    if (!piece)
+                                        return
 
-                    switch (cell) {
-                        case semaphore.Cell.Empty:
-                            piece.visible = false
-                            break
-                        case semaphore.Cell.Green:
-                            piece.visible = true
-                            piece.material = this.piecesMaterials.Green
-                            break
-                        case semaphore.Cell.Yellow:
-                            piece.visible = true
-                            piece.material = this.piecesMaterials.Yellow
-                            break
-                        case semaphore.Cell.Red:
-                            piece.visible = true
-                            piece.material = this.piecesMaterials.Red
-                            break
-                    }
-                })
+                                    switch (cell) {
+                                        case botCraft.Cell.Empty:
+                                            piece.visible = false
+                                            break
+                                        case botCraft.Cell.Green:
+                                            piece.visible = true
+                                            piece.material = this.piecesMaterials.Green
+                                            break
+                                        case botCraft.Cell.Yellow:
+                                            piece.visible = true
+                                            piece.material = this.piecesMaterials.Yellow
+                                            break
+                                        case botCraft.Cell.Red:
+                                            piece.visible = true
+                                            piece.material = this.piecesMaterials.Red
+                                            break
+                                    }
+                                })
+                */
 
                 if (this.settings.curTick == 0) {
                     this.curUserPointer.visible = false
                 } else {
                     this.curUserPointer.visible = true
-                    this.curUserPointer.position.z = this.ticks[this.settings.curTick-1].curUser == 0
-                        ? -26
-                        : 15
+                    /*
+                                        this.curUserPointer.position.z = this.ticks[this.settings.curTick-1].curUser == 0
+                                            ? -26
+                                            : 15
+                    */
                 }
             }).setValue(0)
 

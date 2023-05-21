@@ -2,30 +2,47 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	"github.com/karloid/botCraft/bot-example/go/api"
 	"log"
 	"math/rand"
+	"strconv"
 	"time"
-
-	"github.com/bot-games/semaphore/bot-example/go/api"
 )
 
 var (
-	token  = flag.String("token", "1", "")
+	token  = flag.String("token", "", "")
 	gameId = flag.String("game", "", "")
 	debug  = flag.Bool("debug", false, "")
 )
 
+/*
+*
+EntityTypes =
+
+		"WALL"
+		"HOUSE"
+		"BUILDER_BASE"
+		"BUILDER_UNIT"
+		"MELEE_BASE"
+		"MELEE_UNIT"
+		"RANGED_BASE"
+		"RANGED_UNIT"
+		"RESOURCE"
+		"TURRET"
+	}
+*/
 func main() {
 	flag.Parse()
 	rand.Seed(time.Now().UnixNano())
 
 	if *token == "" {
-		log.Fatalf("Empty token")
+		token = randomInt()
 	}
 	log.Println("token is=", *token)
 
 	bsApi := api.New("http://localhost:10000/game")
+
+	globalGame := api.Game{}
 
 	if *gameId == "" {
 		log.Println("Waiting opponent")
@@ -37,8 +54,14 @@ func main() {
 				log.Fatal(err)
 			}
 		} else {
+			globalGame = *game
 			*gameId = game.Id
 		}
+	}
+
+	entityPropertiesMap := make(map[string]*api.EntityProperties)
+	for _, prop := range globalGame.EntityProperties {
+		entityPropertiesMap[prop.EntityType] = prop
 	}
 
 	for {
@@ -53,52 +76,94 @@ func main() {
 			log.Fatal(err)
 		}
 
-		for _, row := range state.Field {
-			for _, cell := range row {
-				symbol := "🤍"
-				switch cell {
-				case "Green":
-					symbol = "💚"
-				case "Yellow":
-					symbol = "💛"
-				case "Red":
-					symbol = "💜"
+		log.Println("my id=", state.MyId, "tick id=", state.TickId)
+
+		entityMap := make(map[api.Point2D]*api.Entity)
+		entitySurfaceMap := make(map[api.Point2D]*api.Entity)
+
+		entityActions := make(map[int32]api.EntityAction)
+
+		for _, entity := range state.Entities {
+			entityMap[entity.Position] = entity
+
+			entityProperties := entityPropertiesMap[entity.EntityType]
+			entitySize := entityProperties.Size
+
+			// fill entitySurfaceMap using entitySize
+			for y := entity.Position.Y; y < entity.Position.Y+entitySize; y++ {
+				for x := entity.Position.X; x < entity.Position.X+entitySize; x++ {
+					entitySurfaceMap[api.Point2D{x, y}] = entity
 				}
-				fmt.Printf("%s", symbol)
 			}
-			fmt.Println()
-		}
 
-		availableCells := getAvailableCells(state.Field)
-		target := availableCells[rand.Intn(len(availableCells))]
-
-		if err := bsApi.Action(*token, *gameId, target.x, target.y); err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
-type point struct {
-	x, y uint8
-}
-
-func getAvailableCells(field [3][4]string) []point {
-	pieces := map[string]int{}
-	for _, row := range field {
-		for _, cell := range row {
-			pieces[cell]++
-		}
-	}
-
-	var res []point
-	for y, row := range field {
-		for x, cell := range row {
-			if cell == "Red" || cell != "Empty" && pieces[cell] >= 8 {
+			if entity.PlayerId != state.MyId {
 				continue
 			}
-			res = append(res, point{uint8(x), uint8(y)})
+			log.Println("my entity", entity.Id, entity.EntityType, entity.Position, entity.Health)
+
+			if contains(entityProperties.BuildProperties.Options, "BUILDER_UNIT") {
+
+				continue
+			}
+
+			if entity.EntityType == "BUILDER_UNIT" {
+				// move builder to center
+				entityActions[entity.Id] = api.EntityAction{
+					MoveAction: &api.MoveAction{
+						Target: api.Point2D{X: globalGame.MapSize / 2, Y: globalGame.MapSize / 2},
+					},
+				}
+			}
+
+		}
+
+		// print whole map for game.MapSize
+		// appending to string and print whole string
+		for y := int32(0); y < globalGame.MapSize; y++ {
+			stringRow := ""
+			for x := int32(0); x < globalGame.MapSize; x++ {
+				// check for existing entity at given coordinates
+				entity, ok := entitySurfaceMap[api.Point2D{x, y}]
+				if !ok {
+					// no entity at given coordinates
+					stringRow += " "
+					continue
+				}
+
+				char := firstChar(entity.EntityType)
+				if char == "R" {
+					char = "."
+				}
+				stringRow += char
+			}
+			log.Println(stringRow)
+		}
+
+		if err := bsApi.Action(*token, *gameId, entityActions); err != nil {
+			log.Fatal(err)
+		}
+		log.Println("end turn", state.TickId)
+	}
+}
+
+func firstChar(entityType string) string {
+	if len(entityType) == 0 {
+		return "?"
+	}
+	return entityType[0:1]
+}
+
+func randomInt() *string {
+	r := rand.Uint32()
+	s := strconv.Itoa(int(r))
+	return &s
+}
+
+func contains(slice []string, element string) bool {
+	for _, item := range slice {
+		if item == element {
+			return true
 		}
 	}
-
-	return res
+	return false
 }

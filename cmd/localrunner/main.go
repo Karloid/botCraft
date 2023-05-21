@@ -5,8 +5,8 @@ import (
 	"github.com/bot-games/localrunner"
 	"github.com/bot-games/localrunner/scheduler"
 	"github.com/bot-games/localrunner/storage"
-	"github.com/bot-games/semaphore"
-	"github.com/bot-games/semaphore/api"
+	"github.com/karloid/botCraft"
+	"github.com/karloid/botCraft/api"
 )
 
 func main() {
@@ -14,8 +14,8 @@ func main() {
 
 	localrunner.Start(
 		manager.New(
-			"semaphore", "Semaphore",
-			semaphore.Semaphore{},
+			"botCraft", "BotCraft",
+			botCraft.BotCraft{},
 			gameStorage, scheduler.New(),
 			func(m *manager.GameManager) manager.GameApi {
 				return api.New(m)

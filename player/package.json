@@ -5,7 +5,7 @@
   "scripts": {
     "build": "webpack --mode production",
     "serve": "webpack serve --mode development",
-    "proto": "pbjs -t static-module -w es6 -o src/proto/semaphore.js  ../proto/semaphore/*.proto && pbts -o src/proto/semaphore.d.ts src/proto/semaphore.js"
+    "proto": "pbjs -t static-module -w es6 -o src/proto/botCraft.js  ../proto/botCraft/*.proto && pbts -o src/proto/botCraft.d.ts src/proto/botCraft.js"
   },
   "devDependencies": {
     "@types/three": "^0.150.1",
@@ -16,7 +16,7 @@
     "typescript": "^5.0.4",
     "url-loader": "^4.1.1",
     "webpack": "^5.79.0",
-    "webpack-cli": "^5.0.1",
+    "webpack-cli": "^5.0.2",
     "webpack-dev-server": "^4.13.2"
   },
   "dependencies": {

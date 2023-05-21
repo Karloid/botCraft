@@ -7,6 +7,8 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"github.com/karloid/botCraft/api/docs"
+	"github.com/karloid/botCraft/api/player"
 	"io"
 	"net/http"
 
@@ -14,12 +16,10 @@ import (
 	"github.com/go-qbit/rpc/openapi"
 
 	manager "github.com/bot-games/game-manager"
-	"github.com/bot-games/semaphore/api/docs"
-	"github.com/bot-games/semaphore/api/player"
 
-	mAction "github.com/bot-games/semaphore/api/method/action"
-	mJoin "github.com/bot-games/semaphore/api/method/join"
-	mWaitTurn "github.com/bot-games/semaphore/api/method/wait_turn"
+	mAction "github.com/karloid/botCraft/api/method/action"
+	mJoin "github.com/karloid/botCraft/api/method/join"
+	mWaitTurn "github.com/karloid/botCraft/api/method/wait_turn"
 )
 
 type SemaphoreRpc struct {
@@ -27,7 +27,7 @@ type SemaphoreRpc struct {
 }
 
 func New(gm *manager.GameManager) *SemaphoreRpc {
-	gameRpc := &SemaphoreRpc{rpc.New("github.com/bot-games/semaphore/api/method", rpc.WithCors("*"))}
+	gameRpc := &SemaphoreRpc{rpc.New("github.com/karloid/botCraft/api/method", rpc.WithCors("*"))}
 
 	if err := gameRpc.RegisterMethods(
 		mJoin.New(gm),

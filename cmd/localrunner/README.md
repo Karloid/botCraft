@@ -5,11 +5,11 @@
 * [Install](https://go.dev/dl/) `go` with version 1.18 or upper;
 * Clone the project:
 ```shell
-git clone https://github.com/bot-games/semaphore.git
+git clone https://github.com/bot-games/botCraft.git
 ```
 * Build LocalRunner:
 ```shell
-cd semaphore
+cd botCraft
 go build -o localrunner cmd/localrunner/main.go
 ```
 

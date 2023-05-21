@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package botCraft;
+
+option go_package = "/pb";
+
+message Options {
+  int32 map_size = 1;
+  bool fog_of_war = 2;
+  uint32 max_tick_count = 3;
+  repeated EntityProperties entity_properties = 4;
+}
+
+enum EntityType {
+  WALL = 0;
+  HOUSE = 1;
+  BUILDER_BASE = 2;
+  BUILDER_UNIT = 3;
+  MELEE_BASE = 4;
+  MELEE_UNIT = 5;
+  RANGED_BASE = 6;
+  RANGED_UNIT = 7;
+  RESOURCE = 8;
+  TURRET = 9;
+}
+
+message EntityProperties {
+  EntityType entity_type = 1;
+  int32 size = 2;
+  int32 build_score = 3;
+  int32 destroy_score = 4;
+  bool can_move = 5;
+  int32 population_provide = 6;
+  int32 population_use = 7;
+  int32 max_health = 8;
+  int32 cost = 9;
+  int32 sight_range = 10;
+  int32 resource_per_health = 11;
+  BuildProperties build_properties = 12;
+  AttackProperties attack_properties = 13;
+  RepairProperties repair_properties = 14;
+}
+
+message BuildProperties {
+  repeated EntityType options = 1;
+  int32 init_health = 2;
+}
+
+message AttackProperties {
+  int32 attack_range = 1;
+  int32 damage = 2;
+  bool collect_resource = 3;
+}
+
+message RepairProperties {
+  repeated EntityType valid_targets = 1;
+  int32 power = 2;
+}

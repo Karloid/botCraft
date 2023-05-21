@@ -3,12 +3,12 @@ package wait_turn
 import (
 	"context"
 	"errors"
+	"github.com/karloid/botCraft/pb"
+	"log"
 
 	"github.com/go-qbit/rpc"
 
 	manager "github.com/bot-games/game-manager"
-
-	"github.com/bot-games/semaphore/pb"
 )
 
 type reqV1 struct {
@@ -16,9 +16,29 @@ type reqV1 struct {
 	GameId string `json:"game_id"`
 }
 
+type point2DV1 struct {
+	X int32 `json:"x"`
+	Y int32 `json:"y"`
+}
+
+type entityV1 struct {
+	Id         int32     `json:"id"`
+	PlayerId   int32     `json:"player_id"`
+	EntityType string    `json:"entity_type"`
+	Health     int32     `json:"health"`
+	Position   point2DV1 `json:"position"`
+}
+
+type playerV1 struct {
+	Id    int32 `json:"id"`
+	Score int32 `json:"score"`
+}
+
 type stateV1 struct {
-	TickId uint16       `json:"tick_id"`
-	Field  [3][4]string `json:"field"`
+	TickId   uint16      `json:"tick_id"`
+	MyId     int         `json:"my_id"`
+	Entities []*entityV1 `json:"entities"`
+	Players  []*playerV1 `json:"players"`
 }
 
 var errorsV1 struct {
@@ -57,13 +77,48 @@ func (m *Method) V1(ctx context.Context, r *reqV1) (*stateV1, error) {
 	}
 
 	state := tickInfo.State.(*pb.State)
-	field := [3][4]string{}
-	for i, cell := range state.Field {
-		field[i/4][i%4] = cell.String()
+
+	myUid := tickInfo.CurUid
+	// find index of myUid in tickInfo.Uids
+	myPos := 0
+	for i, uid := range tickInfo.Uids {
+		if uid == myUid {
+			myPos = i
+			break
+		}
 	}
 
+	log.Println("get request from user", myUid, "myPos", myPos, "for game", r.GameId, "with token", r.Token, "and tick", tickInfo.Id)
+
+	entities := make([]*entityV1, 0)
+	for _, entity := range state.Entities {
+		entities = append(entities, &entityV1{
+			Id:         entity.Id,
+			PlayerId:   entity.PlayerId,
+			EntityType: entity.EntityType.String(),
+			Health:     entity.Health,
+			Position: point2DV1{
+				X: entity.Position.X,
+				Y: entity.Position.Y,
+			},
+		})
+	}
+
+	myPlayerId := 0
+	players := make([]*playerV1, 0)
+	for i, player := range state.Players {
+		if i == myPos {
+			myPlayerId = i
+		}
+		players = append(players, &playerV1{
+			Id:    player.Id,
+			Score: player.Score,
+		})
+	}
 	return &stateV1{
-		TickId: tickInfo.Id,
-		Field:  field,
+		MyId:     myPlayerId,
+		TickId:   tickInfo.Id,
+		Entities: entities,
+		Players:  players,
 	}, nil
 }

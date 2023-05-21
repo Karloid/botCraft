@@ -1,4 +1,4 @@
-# [Semaphore game](https://bot-games.fun/semaphore) 
+# [botCraft game](https://bot-games.fun/botCraft)🚧🚧🚧 WIP 🚧🚧🚧 
 on the [bot-games.fun](https://bot-games.fun) site.
 
 ### Bot examples

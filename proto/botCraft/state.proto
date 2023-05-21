@@ -1,0 +1,33 @@
+syntax = "proto3";
+import "botCraft/options.proto";
+
+package botCraft;
+
+option go_package = "/pb";
+
+message State {
+  repeated Entity entities = 2;
+  repeated Player players = 3;
+
+  int32 nextId = 4;
+  uint32 tick = 5;
+}
+
+message Player {
+  int32 id = 1;
+  int32 score = 2;
+}
+
+message Point2D {
+  int32 x = 1;
+  int32 y = 2;
+}
+
+message Entity {
+  int32 id = 1;
+  int32 playerId = 2;
+  EntityType entityType = 3;
+  int32 health = 4;
+  Point2D position = 5;
+}
+
