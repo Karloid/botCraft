@@ -69,8 +69,9 @@ type Entity struct {
 }
 
 type Player struct {
-	Id    int32 `json:"id"`
-	Score int32 `json:"score"`
+	Id        int32 `json:"id"`
+	Score     int32 `json:"score"`
+	Resources int32 `json:"resources"`
 }
 
 type GameState struct {

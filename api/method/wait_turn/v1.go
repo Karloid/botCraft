@@ -31,8 +31,9 @@ type entityV1 struct {
 }
 
 type playerV1 struct {
-	Id    int32 `json:"id"`
-	Score int32 `json:"score"`
+	Id        int32 `json:"id"`
+	Score     int32 `json:"score"`
+	Resources int32 `json:"resources"`
 }
 
 type stateV1 struct {
@@ -112,8 +113,9 @@ func (m *Method) V1(ctx context.Context, r *reqV1) (*stateV1, error) {
 			myPlayerId = i
 		}
 		players = append(players, &playerV1{
-			Id:    player.Id,
-			Score: player.Score,
+			Id:        player.Id,
+			Score:     player.Score,
+			Resources: player.Resources,
 		})
 	}
 	return &stateV1{

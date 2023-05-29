@@ -31,13 +31,15 @@ func (s BotCraft) Init() (proto.Message, proto.Message, uint8) {
 	players := make([]*pb.Player, 0)
 
 	players = append(players, &pb.Player{
-		Id:    0,
-		Score: 0,
+		Id:        0,
+		Score:     0,
+		Resources: 0,
 	})
 
 	players = append(players, &pb.Player{
-		Id:    1,
-		Score: 0,
+		Id:        1,
+		Score:     0,
+		Resources: 0,
 	})
 
 	entityProperties := s.fillEntityProperties()
@@ -69,7 +71,7 @@ func (s BotCraft) Init() (proto.Message, proto.Message, uint8) {
 	return &pb.Options{
 		MapSize:          maxMapSize,
 		FogOfWar:         false,
-		MaxTickCount:     100, // TODO set 1000
+		MaxTickCount:     300,
 		EntityProperties: entityProperties,
 	}, state, uint8((1 << 0) | (1 << 1))
 }
@@ -113,7 +115,7 @@ func (s BotCraft) generateResources(entities *map[int32]*pb.Entity, nextId int32
 		}
 	}
 
-	return 0
+	return nextId
 }
 
 func (s BotCraft) putEntityToSurface(pos Point2D, resourceSize int32, entitiesSurface *map[Point2D]*pb.Entity, entityCandidate *pb.Entity) {
@@ -167,9 +169,9 @@ type EntityIdPlusAction struct {
 
 func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Action) *manager.TickResult {
 	var options = tickInfo.GameOptions.(*pb.Options)
-	entityProperties := make(map[pb.EntityType]*pb.EntityProperties)
+	entitiesProperties := make(map[pb.EntityType]*pb.EntityProperties)
 	for i := range options.EntityProperties {
-		entityProperties[options.EntityProperties[i].EntityType] = options.EntityProperties[i]
+		entitiesProperties[options.EntityProperties[i].EntityType] = options.EntityProperties[i]
 	}
 	state := tickInfo.State.(*pb.State)
 	state.Tick++
@@ -178,7 +180,11 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 	entitiesSurface := make(map[Point2D]*pb.Entity)
 	for _, entity := range state.Entities {
 		entitiesById[entity.Id] = entity
-		s.placeEntity(&entitiesSurface, &entitiesById, &entityProperties, entity)
+		s.placeEntity(&entitiesSurface, &entitiesById, &entitiesProperties, entity)
+	}
+	playersById := make(map[int32]*pb.Player)
+	for _, player := range state.Players {
+		playersById[player.Id] = player
 	}
 
 	log.Println("ApplyActions ", "actions:", len(actions))
@@ -257,8 +263,11 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 			// TODO log error to player response
 			continue
 		}
+		if !entitiesProperties[entity.EntityType].CanMove {
+			continue
+		}
 
-		var nextStep pb.Point2D = objCopy(entity.Position)
+		var nextStep Point2D = Point2D{X: entity.Position.X, Y: entity.Position.Y}
 
 		if nextStep.X < target.X {
 			nextStep.X++
@@ -270,22 +279,103 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 			nextStep.Y--
 		}
 
-		pendingMovePositions[entity.Id] = &nextStep
+		// place occupied
+		//TODO  check all new positions for all surface
+		entityWithOccupiedNextStep := entitiesSurface[nextStep]
+		if entityWithOccupiedNextStep != nil && entityWithOccupiedNextStep.Id != entity.Id && entityWithOccupiedNextStep.PlayerId != entity.PlayerId {
+			pendingAttackActions = append(pendingAttackActions, &EntityIdPlusAction{
+				EntityId: entity.Id,
+				EntityAction: &pb.EntityAction{
+					AttackAction: &pb.AttackAction{
+						TargetId: &pb.Int32Value{Value: entityWithOccupiedNextStep.Id},
+					},
+				},
+			})
+		} else {
+			pendingMovePositions[entity.Id] = s.point2DtoProto(&nextStep)
+		}
 	}
 
 	// attack
 	pendingAttackActions = shuffleArray(pendingAttackActions)
 
 	for _, entityIdPlusAction := range pendingAttackActions {
-		println(entityIdPlusAction.EntityAction.AttackAction.TargetId)
+		// if targetId not nil
+		entity := entitiesById[entityIdPlusAction.EntityId]
+		entityProperties := entitiesProperties[entity.EntityType]
+
+		if entityIdPlusAction.EntityAction.AttackAction.TargetId != nil {
+			targetId := entityIdPlusAction.EntityAction.AttackAction.TargetId.Value
+			target, ok := entitiesById[targetId]
+			if !ok {
+				continue
+			}
+
+			distanceToTarget := distanceNoObstracles(target, entity, &entitiesProperties)
+			if entityProperties.AttackProperties.AttackRange < distanceToTarget {
+				continue
+			}
+
+			actualDamage := minOf(entityProperties.AttackProperties.Damage, target.Health)
+			target.Health -= actualDamage
+
+			// collect resources
+			targetProperties := entitiesProperties[target.EntityType]
+			resources := targetProperties.ResourcePerHealth * actualDamage
+			if entityProperties.AttackProperties.CollectResource {
+				player := playersById[entity.PlayerId]
+				player.Resources += resources
+			}
+		}
+	}
+
+	// remove dead units
+	for _, entity := range entitiesById {
+		if entity.Health <= 0 {
+			if entity.EntityType != pb.EntityType_RESOURCE {
+				println("dead entity=", entity.Id, "type", entity.EntityType.String(),
+					"pos", entity.Position.X, entity.Position.Y, "playerId", entity.PlayerId)
+			}
+
+			s.removeEntity(&entitiesById, &entitiesSurface, &entitiesProperties, entity)
+			// remove entity from state.Entities
+			for i, e := range state.Entities {
+				if e == entity {
+					// found entity to remove, so remove it
+					state.Entities = append(state.Entities[:i], state.Entities[i+1:]...)
+					break
+				}
+			}
+
+		}
 	}
 
 	// build
 	pendingBuildActions = shuffleArray(pendingBuildActions)
 
 	// repair
+	// cannot repair dead units
 
 	// move
+	for entityId, pbNewPosition := range pendingMovePositions {
+		entity, ok := entitiesById[entityId]
+		if !ok {
+			continue
+		}
+		if entity.Health < 0 {
+			continue
+		}
+
+		newPosition := point2DFromProto(pbNewPosition)
+		//TODO  check all new positions for all surface
+		if entitiesSurface[newPosition] != nil && entitiesSurface[newPosition].Id != entityId {
+			continue
+		}
+		s.removeEntity(&entitiesById, &entitiesSurface, &entitiesProperties, entity)
+		entity.Position = pbNewPosition
+
+		s.placeEntity(&entitiesSurface, &entitiesById, &entitiesProperties, entity)
+	}
 
 	// final checks
 
@@ -311,6 +401,52 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 		NewState:        state,
 		NextTurnPlayers: uint8((1 << 0) | (1 << 1)),
 	}
+}
+
+func minOf(a int32, b int32) int32 {
+	if a < b {
+		return a
+	} else {
+		return b
+	}
+}
+
+func point2DFromProto(position *pb.Point2D) Point2D {
+	return Point2D{X: position.X, Y: position.Y}
+}
+
+func (s BotCraft) point2DtoProto(nextStep *Point2D) *pb.Point2D {
+	return &pb.Point2D{X: nextStep.X, Y: nextStep.Y}
+}
+
+func distanceNoObstracles(target *pb.Entity, entity *pb.Entity, m *map[pb.EntityType]*pb.EntityProperties) int32 {
+	// calc manhattan distance between squares, with given positions of top left corners
+	// TODO optimize it
+	targetSize := (*m)[target.EntityType].Size
+	entitySize := (*m)[entity.EntityType].Size
+
+	minDistance := int32(99999)
+	for targetX := target.Position.X; targetX < target.Position.X+targetSize; targetX++ {
+		for targetY := target.Position.Y; targetY < target.Position.Y+targetSize; targetY++ {
+			for entityX := entity.Position.X; entityX < entity.Position.X+entitySize; entityX++ {
+				for entityY := entity.Position.Y; entityY < entity.Position.Y+entitySize; entityY++ {
+					manhattanDistance := abs(targetX-entityX) + abs(targetY-entityY)
+					if manhattanDistance < minDistance {
+						minDistance = manhattanDistance
+					}
+				}
+			}
+
+		}
+	}
+	return minDistance
+}
+
+func abs(i int32) int32 {
+	if i < 0 {
+		return -i
+	}
+	return i
 }
 
 func shuffleArray(actions []*EntityIdPlusAction) []*EntityIdPlusAction {

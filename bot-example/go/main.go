@@ -76,7 +76,8 @@ func main() {
 			log.Fatal(err)
 		}
 
-		log.Println("my id=", state.MyId, "tick id=", state.TickId)
+		myPlayer := state.Players[state.MyId]
+		log.Println("my id=", state.MyId, "tick id=", state.TickId, "myResources=", myPlayer.Resources, "myScore", myPlayer.Score)
 
 		entityMap := make(map[api.Point2D]*api.Entity)
 		entitySurfaceMap := make(map[api.Point2D]*api.Entity)

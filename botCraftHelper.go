@@ -53,6 +53,7 @@ func (s BotCraft) fillEntityProperties() []*pb.EntityProperties {
 		Cost:              10,
 		PopulationProvide: 0,
 		PopulationUse:     1,
+		CanMove:           true,
 		BuildProperties: &pb.BuildProperties{
 			Options:    []pb.EntityType{pb.EntityType_WALL, pb.EntityType_HOUSE, pb.EntityType_BUILDER_BASE, pb.EntityType_TURRET},
 			InitHealth: 100},
@@ -99,6 +100,7 @@ func (s BotCraft) fillEntityProperties() []*pb.EntityProperties {
 		Cost:              10,
 		PopulationProvide: 0,
 		PopulationUse:     1,
+		CanMove:           true,
 		AttackProperties: &pb.AttackProperties{
 			AttackRange:     1,
 			Damage:          5,
@@ -129,6 +131,7 @@ func (s BotCraft) fillEntityProperties() []*pb.EntityProperties {
 		Cost:              10,
 		PopulationProvide: 0,
 		PopulationUse:     1,
+		CanMove:           true,
 		AttackProperties: &pb.AttackProperties{
 			AttackRange:     3,
 			Damage:          5,
