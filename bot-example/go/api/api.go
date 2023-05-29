@@ -111,7 +111,7 @@ type BuildAction struct {
 }
 
 type AttackAction struct {
-	Target     int32       `json:"target"`
+	Target     *int32      `json:"target"`
 	AutoAttack *AutoAttack `json:"auto_attack"`
 }
 

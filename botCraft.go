@@ -277,7 +277,7 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 	pendingAttackActions = shuffleArray(pendingAttackActions)
 
 	for _, entityIdPlusAction := range pendingAttackActions {
-		println(entityIdPlusAction.EntityAction.AttackAction.Target)
+		println(entityIdPlusAction.EntityAction.AttackAction.TargetId)
 	}
 
 	// build

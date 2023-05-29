@@ -7,6 +7,11 @@ import "botCraft/options.proto";
 
 option go_package = "/pb";
 
+message Int32Value {
+  // The int32 value.
+  int32 value = 1;
+}
+
 message Action {
   map<int32, EntityAction> entity_actions = 1;
 }
@@ -30,7 +35,7 @@ message BuildAction {
 }
 
 message AttackAction {
-  int32 target = 1;
+  Int32Value targetId = 1;
   AutoAttack auto_attack = 2;
 }
 

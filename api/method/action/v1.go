@@ -3,11 +3,9 @@ package join
 import (
 	"context"
 	"errors"
-	"github.com/karloid/botCraft/pb"
-
-	"github.com/go-qbit/rpc"
-
 	manager "github.com/bot-games/game-manager"
+	"github.com/go-qbit/rpc"
+	"github.com/karloid/botCraft/pb"
 )
 
 type reqV1 struct {
@@ -35,7 +33,7 @@ type buildActionV1 struct {
 }
 
 type attackActionV1 struct {
-	Target     int32         `json:"target"`
+	TargetId   *int32        `json:"target_id"`
 	AutoAttack *autoAttackV1 `json:"auto_attack"`
 }
 
@@ -45,7 +43,7 @@ type autoAttackV1 struct {
 }
 
 type repairActionV1 struct {
-	TargetID int32 `json:"target_id"`
+	TargetId int32 `json:"target_id"`
 }
 
 type point2DV1 struct {
@@ -114,8 +112,13 @@ func mapRequestToPbAction(r *reqV1) *pb.Action {
 
 		// attack action
 		if attackAction := reqEntityAction.AttackAction; attackAction != nil {
-			pbAttackAction := &pb.AttackAction{
-				Target: attackAction.Target,
+
+			pbAttackAction := &pb.AttackAction{}
+
+			if attackAction.TargetId != nil {
+				pbAttackAction.TargetId = &pb.Int32Value{
+					Value: *attackAction.TargetId,
+				}
 			}
 
 			if autoAttack := attackAction.AutoAttack; autoAttack != nil {
@@ -131,7 +134,7 @@ func mapRequestToPbAction(r *reqV1) *pb.Action {
 		// repair action
 		if repairAction := reqEntityAction.RepairAction; repairAction != nil {
 			pbEntityAction.RepairAction = &pb.RepairAction{
-				TargetId: repairAction.TargetID,
+				TargetId: repairAction.TargetId,
 			}
 		}
 
