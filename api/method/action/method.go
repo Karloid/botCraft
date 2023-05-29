@@ -17,7 +17,7 @@ func New(gm *manager.GameManager) *Method {
 }
 
 func (m *Method) Caption(context.Context) string {
-	return `Action`
+	return `EntityAction`
 }
 
 func (m *Method) Description(context.Context) string {

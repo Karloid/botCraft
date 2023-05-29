@@ -29,5 +29,6 @@ message Entity {
   EntityType entityType = 3;
   int32 health = 4;
   Point2D position = 5;
+  bool active = 6;
 }
 

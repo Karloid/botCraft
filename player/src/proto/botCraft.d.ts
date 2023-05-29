@@ -1581,6 +1581,9 @@ export namespace botCraft {
 
         /** Entity position */
         position?: (botCraft.IPoint2D|null);
+
+        /** Entity active */
+        active?: (boolean|null);
     }
 
     /** Represents an Entity. */
@@ -1606,6 +1609,9 @@ export namespace botCraft {
 
         /** Entity position. */
         public position?: (botCraft.IPoint2D|null);
+
+        /** Entity active. */
+        public active: boolean;
 
         /**
          * Creates a new Entity instance using the specified properties.

@@ -27,6 +27,7 @@ type entityV1 struct {
 	EntityType string    `json:"entity_type"`
 	Health     int32     `json:"health"`
 	Position   point2DV1 `json:"position"`
+	Active     bool      `json:"active"`
 }
 
 type playerV1 struct {

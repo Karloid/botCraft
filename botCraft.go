@@ -99,6 +99,7 @@ func (s BotCraft) generateResources(entities *map[int32]*pb.Entity, nextId int32
 			EntityType: pb.EntityType_RESOURCE,
 			Position:   pos.toPb(),
 			Health:     30,
+			Active:     true,
 		}
 
 		isFree := s.checkIsPosFree(pos, resourceSize, entitiesSurface)
@@ -159,19 +160,32 @@ func (s BotCraft) CheckAction(tickInfo *manager.TickInfo, action proto.Message) 
 	return nil
 }
 
+type EntityIdPlusAction struct {
+	EntityId     int32
+	EntityAction *pb.EntityAction
+}
+
 func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Action) *manager.TickResult {
-	options := tickInfo.GameOptions.(*pb.Options)
+	var options = tickInfo.GameOptions.(*pb.Options)
+	entityProperties := make(map[pb.EntityType]*pb.EntityProperties)
+	for i := range options.EntityProperties {
+		entityProperties[options.EntityProperties[i].EntityType] = options.EntityProperties[i]
+	}
 	state := tickInfo.State.(*pb.State)
 	state.Tick++
 
 	entitiesById := make(map[int32]*pb.Entity)
+	entitiesSurface := make(map[Point2D]*pb.Entity)
 	for _, entity := range state.Entities {
 		entitiesById[entity.Id] = entity
+		s.placeEntity(&entitiesSurface, &entitiesById, &entityProperties, entity)
 	}
 
 	log.Println("ApplyActions ", "actions:", len(actions))
 
-	pendingNextSteps := make(map[int32]*pb.Point2D)
+	pendingMoveActions := make([]*EntityIdPlusAction, 0)
+	pendingBuildActions := make([]*EntityIdPlusAction, 0)
+	pendingAttackActions := make([]*EntityIdPlusAction, 0)
 
 	for _, action := range actions {
 		pbAction := action.Action.(*pb.Action)
@@ -196,6 +210,11 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 				continue
 			}
 
+			entityIdPlusAction := EntityIdPlusAction{
+				EntityId:     entityId,
+				EntityAction: entityAction,
+			}
+
 			/**
 			1. Pathfinding algorithm is triggered for moving entities to determine the potential next position.
 				If the target position for the movement action of an entity is adjacent, pathfinding is not performed and the position is memorized.
@@ -209,44 +228,66 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 			*/
 			// TODO proper concurrent order of actions
 			if entityAction.MoveAction != nil {
-				// do breath first search
-				// find next step
-				target := entityAction.MoveAction.Target
-
-				if !inBounds(options, target) {
-					// TODO log error to player response
-					continue
-				}
-
-				var nextStep pb.Point2D = objCopy(entity.Position)
-
-				if nextStep.X < target.X {
-					nextStep.X++
-				} else if nextStep.X > target.X {
-					nextStep.X--
-				} else if nextStep.Y < target.Y {
-					nextStep.Y++
-				} else if nextStep.Y > target.Y {
-					nextStep.Y--
-				}
-
-				pendingNextSteps[entityId] = &nextStep
+				pendingMoveActions = append(pendingMoveActions, &entityIdPlusAction)
 			} else if entityAction.BuildAction != nil {
-
+				pendingBuildActions = append(pendingBuildActions, &entityIdPlusAction)
+			} else if entityAction.AttackAction != nil {
+				pendingAttackActions = append(pendingAttackActions, &entityIdPlusAction)
 			}
 		}
-
 	}
 
 	// apply steps
-	for entityId, nextStep := range pendingNextSteps {
-		entity, ok := entitiesById[entityId]
+
+	// prepare move
+	pendingMovePositions := make(map[int32]*pb.Point2D)
+
+	for _, entityIdPlusAction := range pendingMoveActions {
+
+		entity, ok := entitiesById[entityIdPlusAction.EntityId]
 		if !ok {
 			continue
 		}
 
-		entity.Position = nextStep
+		// do breath first search
+		// find next step
+		target := entityIdPlusAction.EntityAction.MoveAction.Target
+
+		if !inBounds(options, target) {
+			// TODO log error to player response
+			continue
+		}
+
+		var nextStep pb.Point2D = objCopy(entity.Position)
+
+		if nextStep.X < target.X {
+			nextStep.X++
+		} else if nextStep.X > target.X {
+			nextStep.X--
+		} else if nextStep.Y < target.Y {
+			nextStep.Y++
+		} else if nextStep.Y > target.Y {
+			nextStep.Y--
+		}
+
+		pendingMovePositions[entity.Id] = &nextStep
 	}
+
+	// attack
+	pendingAttackActions = shuffleArray(pendingAttackActions)
+
+	for _, entityIdPlusAction := range pendingAttackActions {
+		println(entityIdPlusAction.EntityAction.AttackAction.Target)
+	}
+
+	// build
+	pendingBuildActions = shuffleArray(pendingBuildActions)
+
+	// repair
+
+	// move
+
+	// final checks
 
 	if hasWinner(state) {
 		return &manager.TickResult{
@@ -272,6 +313,15 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 	}
 }
 
+func shuffleArray(actions []*EntityIdPlusAction) []*EntityIdPlusAction {
+	n := len(actions)
+	for i := n - 1; i > 0; i-- {
+		j := rand.Intn(i + 1)
+		actions[i], actions[j] = actions[j], actions[i]
+	}
+	return actions
+}
+
 func (s BotCraft) SmartGuyTurn(tickInfo *manager.TickInfo) proto.Message {
 	actions := make(map[int32]*pb.EntityAction)
 
@@ -292,6 +342,7 @@ func (s BotCraft) generateBases(players []*pb.Player, entitiesById *map[int32]*p
 			EntityType: pb.EntityType_BUILDER_BASE,
 			Position:   Point2D{X: 6, Y: int32(index) * (mapSize - 4)}.toPb(),
 			Health:     100,
+			Active:     true,
 		})
 		nextId++
 
@@ -304,6 +355,7 @@ func (s BotCraft) generateBases(players []*pb.Player, entitiesById *map[int32]*p
 				EntityType: pb.EntityType_BUILDER_UNIT,
 				Position:   Point2D{X: 11, Y: int32(index)*(mapSize-4) + int32(i)}.toPb(),
 				Health:     10,
+				Active:     true,
 			})
 
 			nextId++
@@ -319,12 +371,12 @@ func (s BotCraft) placeEntity(
 	entity *pb.Entity,
 ) {
 	(*entitiesById)[entity.Id] = entity
-	baseSize := (*entityProperties)[pb.EntityType_BUILDER_BASE].Size
+	entitySize := (*entityProperties)[entity.EntityType].Size
 
 	entityPosition := Point2D{X: entity.Position.X, Y: entity.Position.Y}
 
-	for x := entityPosition.X; x < entityPosition.X+baseSize; x++ {
-		for y := entityPosition.Y; y < entityPosition.Y+baseSize; y++ {
+	for x := entityPosition.X; x < entityPosition.X+entitySize; x++ {
+		for y := entityPosition.Y; y < entityPosition.Y+entitySize; y++ {
 			// remove existing entities
 			posToPlace := Point2D{X: x, Y: y}
 			existing, ok := (*entitiesSurface)[posToPlace]

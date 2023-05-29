@@ -4106,6 +4106,7 @@ export const botCraft = $root.botCraft = (() => {
          * @property {botCraft.EntityType|null} [entityType] Entity entityType
          * @property {number|null} [health] Entity health
          * @property {botCraft.IPoint2D|null} [position] Entity position
+         * @property {boolean|null} [active] Entity active
          */
 
         /**
@@ -4164,6 +4165,14 @@ export const botCraft = $root.botCraft = (() => {
         Entity.prototype.position = null;
 
         /**
+         * Entity active.
+         * @member {boolean} active
+         * @memberof botCraft.Entity
+         * @instance
+         */
+        Entity.prototype.active = false;
+
+        /**
          * Creates a new Entity instance using the specified properties.
          * @function create
          * @memberof botCraft.Entity
@@ -4197,6 +4206,8 @@ export const botCraft = $root.botCraft = (() => {
                 writer.uint32(/* id 4, wireType 0 =*/32).int32(message.health);
             if (message.position != null && Object.hasOwnProperty.call(message, "position"))
                 $root.botCraft.Point2D.encode(message.position, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
+            if (message.active != null && Object.hasOwnProperty.call(message, "active"))
+                writer.uint32(/* id 6, wireType 0 =*/48).bool(message.active);
             return writer;
         };
 
@@ -4245,6 +4256,9 @@ export const botCraft = $root.botCraft = (() => {
                     break;
                 case 5:
                     message.position = $root.botCraft.Point2D.decode(reader, reader.uint32());
+                    break;
+                case 6:
+                    message.active = reader.bool();
                     break;
                 default:
                     reader.skipType(tag & 7);
@@ -4311,6 +4325,9 @@ export const botCraft = $root.botCraft = (() => {
                 if (error)
                     return "position." + error;
             }
+            if (message.active != null && message.hasOwnProperty("active"))
+                if (typeof message.active !== "boolean")
+                    return "active: boolean expected";
             return null;
         };
 
@@ -4379,6 +4396,8 @@ export const botCraft = $root.botCraft = (() => {
                     throw TypeError(".botCraft.Entity.position: object expected");
                 message.position = $root.botCraft.Point2D.fromObject(object.position);
             }
+            if (object.active != null)
+                message.active = Boolean(object.active);
             return message;
         };
 
@@ -4401,6 +4420,7 @@ export const botCraft = $root.botCraft = (() => {
                 object.entityType = options.enums === String ? "WALL" : 0;
                 object.health = 0;
                 object.position = null;
+                object.active = false;
             }
             if (message.id != null && message.hasOwnProperty("id"))
                 object.id = message.id;
@@ -4412,6 +4432,8 @@ export const botCraft = $root.botCraft = (() => {
                 object.health = message.health;
             if (message.position != null && message.hasOwnProperty("position"))
                 object.position = $root.botCraft.Point2D.toObject(message.position, options);
+            if (message.active != null && message.hasOwnProperty("active"))
+                object.active = message.active;
             return object;
         };
 

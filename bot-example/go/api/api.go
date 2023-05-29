@@ -65,6 +65,7 @@ type Entity struct {
 	EntityType string  `json:"entity_type"`
 	Health     int32   `json:"health"`
 	Position   Point2D `json:"position"`
+	Active     bool    `json:"active"`
 }
 
 type Player struct {
