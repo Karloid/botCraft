@@ -25,7 +25,7 @@ func (d Point2D) toPb() *pb.Point2D {
 	}
 }
 
-func (s BotCraft) Init() (proto.Message, proto.Message, uint8) {
+func (s BotCraft) Init() (proto.Message, proto.Message, uint8, any) {
 	maxMapSize := int32(32)
 
 	players := make([]*pb.Player, 0)
@@ -73,7 +73,7 @@ func (s BotCraft) Init() (proto.Message, proto.Message, uint8) {
 		FogOfWar:         false,
 		MaxTickCount:     300,
 		EntityProperties: entityProperties,
-	}, state, uint8((1 << 0) | (1 << 1))
+	}, state, uint8((1 << 0) | (1 << 1)), nil
 }
 
 func (s BotCraft) generateResources(entities *map[int32]*pb.Entity, nextId int32, mapSize int32, entitiesSurface *map[Point2D]*pb.Entity, entityProperties *map[pb.EntityType]*pb.EntityProperties) int32 {
