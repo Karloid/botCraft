@@ -4,6 +4,7 @@ package botCraft
 import (
 	"github.com/karloid/botCraft/pb"
 	"log"
+	"math"
 	"math/rand"
 
 	"google.golang.org/protobuf/proto"
@@ -269,7 +270,7 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 
 		pathToTarget := s.findPath(options, &entitiesSurface, &entitiesById, &entitiesProperties, entity, target)
 		// print path from entity to target
-		log.Println("pathToTarget from=", entity.Position.X, entity.Position.Y, " to=", target.X, target.Y, "path=", pathToTarget)
+		//log.Println("pathToTarget from=", entity.Position.X, entity.Position.Y, " to=", target.X, target.Y, "path=", pathToTarget)
 
 		if len(pathToTarget) == 0 {
 			continue
@@ -342,19 +343,23 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 					break
 				}
 			}
-
 		}
 	}
 
 	// build
 	pendingBuildActions = shuffleArray(pendingBuildActions)
 	for _, action := range pendingBuildActions {
-		builder := entitiesById[action.EntityId]
+		builder, ok := entitiesById[action.EntityId]
+		if !ok {
+			log.Println("builder is dead probably")
+			continue
+		}
 		positionToBuild := action.EntityAction.BuildAction.Position
 		entityTypeToBuild := action.EntityAction.BuildAction.EntityType
 		buildSize := entitiesProperties[entityTypeToBuild].Size
 
 		// check builder can build this type of entity
+		log.Println("builder.EntityType=", builder.EntityType, "entityTypeToBuild=", entityTypeToBuild)
 		builderProp := entitiesProperties[builder.EntityType]
 		if builderProp.BuildProperties == nil {
 			log.Println("builder can't build entity=", entityTypeToBuild.String(), "playerId=", builder.PlayerId)
@@ -395,6 +400,13 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 		if !spaceIsFree {
 			// TODO log error to player response
 			log.Println("space is not free to build entity=", entityTypeToBuild.String(), "playerId=", builder.PlayerId)
+			continue
+		}
+
+		// check builder is adjacent to build position
+		distanceToEntityToBuild := distanceTo(&entitiesProperties, options, builder, entityTypeToBuild, positionToBuild)
+		if distanceToEntityToBuild > 1 {
+			log.Println("builder is not adjacent to build position entity=", entityTypeToBuild.String(), "playerId=", builder.PlayerId, "distance=", distanceToEntityToBuild)
 			continue
 		}
 
@@ -466,6 +478,38 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 		NewState:        state,
 		NextTurnPlayers: uint8((1 << 0) | (1 << 1)),
 	}
+}
+
+func distanceTo(entitiesProperties *map[pb.EntityType]*pb.EntityProperties, options *pb.Options, builder *pb.Entity, buildEntityType pb.EntityType, buildPos *pb.Point2D) int32 {
+	builderSize := (*entitiesProperties)[builder.EntityType].Size
+	buildSize := (*entitiesProperties)[buildEntityType].Size
+	distance := int32(math.MaxInt32)
+
+	// for all cells of builder
+	for x := builder.Position.X; x < builder.Position.X+builderSize; x++ {
+		for y := builder.Position.Y; y < builder.Position.Y+builderSize; y++ {
+			// for all cells of build
+			for x2 := buildPos.X; x2 < buildPos.X+buildSize; x2++ {
+				for y2 := buildPos.Y; y2 < buildPos.Y+buildSize; y2++ {
+					distance = minOf(distance, distanceManh(&Point2D{x, y}, &Point2D{x2, y2}))
+				}
+			}
+		}
+	}
+
+	return distance
+}
+
+func abs2(a int32) int32 {
+	if a < 0 {
+		return -a
+	} else {
+		return a
+	}
+}
+
+func distanceManh(p *Point2D, p2 *Point2D) int32 {
+	return abs2(p.X-p2.X) + abs2(p.Y-p2.Y)
 }
 
 func contains(array []pb.EntityType, entityTypeToCheck pb.EntityType) bool {

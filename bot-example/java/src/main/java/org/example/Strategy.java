@@ -78,10 +78,86 @@ public class Strategy {
 
                 resultAction.entityActions.put(entity.id, entityAction);
             }
+            
+            if (entity.entityType.equals("MELEE_BASE") && entity.playerId == gameState.myId) {
+                int meleeUnitCost = gameOptions.getEntityProperties("MELEE_UNIT").cost;
+                if (meleeUnitCost < gameState.getMyPlayer().resources) {
+                    List<Api.Point2D> positionsToBuildAvailable = findFreeAdjactedSpaceFor(gameOptions, gameState, entity);
+
+                    if (!positionsToBuildAvailable.isEmpty()) {
+                        Api.EntityAction entityAction = new Api.EntityAction();
+                        entityAction.buildAction = new Api.BuildAction("MELEE_UNIT", positionsToBuildAvailable.get(0));
+                        resultAction.entityActions.put(entity.id, entityAction);
+                    }
+                }
+            }
+
+            if (entity.entityType.equals("MELEE_UNIT") && entity.playerId == gameState.myId) {
+                Api.EntityAction entityAction = new Api.EntityAction();
+                Api.Entity nearestEnemy = null;
+                int nearestEnemyDistance = Integer.MAX_VALUE;
+                for (Api.Entity enemy : gameState.entities) {
+                    if (enemy.playerId != gameState.myId && !Objects.equals(enemy.entityType, "RESOURCE")){
+                        int distance = Math.abs(enemy.position.x - entity.position.x) + Math.abs(enemy.position.y - entity.position.y);
+                        if (distance < nearestEnemyDistance) {
+                            nearestEnemyDistance = distance;
+                            nearestEnemy = enemy;
+                        }
+                    }
+                }
+
+                if (nearestEnemy != null) {
+                    // find path to resource
+                    int distanceToEnemy = distanceToEntity(gameOptions, entity, nearestEnemy.entityType, nearestEnemy.position);
+
+                    if (distanceToEnemy > 1) {
+                        entityAction.moveAction = new Api.MoveAction(nearestEnemy.position, true, true);
+                    } else {
+                        entityAction.attackAction = new Api.AttackAction(nearestEnemy.id, null);
+                    }
+                    resultAction.entityActions.put(entity.id, entityAction);
+                }
+            }
         }
 
 
         return resultAction;
+    }
+
+    private List<Api.Point2D> findFreeAdjactedSpaceFor(Api.GameOptions gameOptions, Api.GameState gameState, Api.Entity entity) {
+        List<Api.Point2D> result = new ArrayList<>();
+        Map<Api.Point2D, Api.Entity> allEntitiesMap = new HashMap<>();
+        for (Api.Entity entity1 : gameState.entities) {
+            int entitySize = gameOptions.getEntityProperties(entity1.entityType).size;
+            // fill map
+            for (int i = 0; i < entitySize; i++) {
+                for (int j = 0; j < entitySize; j++) {
+                    allEntitiesMap.put(new Api.Point2D(entity1.position.x + i, entity1.position.y + j), entity1);
+                }
+            }
+        }
+
+        int entitySize = gameOptions.getEntityProperties(entity.entityType).size;
+        // fill map
+        for (int i = -1; i <= entitySize; i++) {
+            for (int j = -1; j <= entitySize; j++) {
+                Api.Point2D point = new Api.Point2D(entity.position.x + i, entity.position.y + j);
+
+                // check in bounds
+                if (point.x < 0 || point.y < 0 || point.x >= gameOptions.mapSize || point.y >= gameOptions.mapSize) {
+                    continue;
+                }
+
+                if (distanceToEntity(gameOptions, entity, entity.entityType, point) > 1) {
+                    continue;
+                }
+                if (allEntitiesMap.get(point) == null) {
+                    result.add(point);
+                }
+            }
+        }
+
+        return result;
     }
 
     private int distanceToEntity(Api.GameOptions gameOptions, Api.Entity fromEntity, String toEntityType, Api.Point2D toEntityPos) {
