@@ -268,6 +268,8 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 		}
 
 		pathToTarget := s.findPath(options, &entitiesSurface, &entitiesById, &entitiesProperties, entity, target)
+		// print path from entity to target
+		log.Println("pathToTarget from=", entity.Position.X, entity.Position.Y, " to=", target.X, target.Y, "path=", pathToTarget)
 
 		if len(pathToTarget) == 0 {
 			continue
@@ -535,7 +537,14 @@ func (s BotCraft) removeEntity(
 	}
 }
 
-func (s BotCraft) findPath(options *pb.Options, entitiesSurface *map[Point2D]*pb.Entity, entitiesById *map[int32]*pb.Entity, entityProperties *map[pb.EntityType]*pb.EntityProperties, fromEntity *pb.Entity, target *pb.Point2D) []*Point2D {
+func (s BotCraft) findPath(
+	options *pb.Options,
+	entitiesSurface *map[Point2D]*pb.Entity,
+	entitiesById *map[int32]*pb.Entity,
+	entityProperties *map[pb.EntityType]*pb.EntityProperties,
+	fromEntity *pb.Entity,
+	target *pb.Point2D,
+) []*Point2D {
 	// bfs to find path
 
 	// Define a struct to represent each node in the graph
@@ -553,6 +562,11 @@ func (s BotCraft) findPath(options *pb.Options, entitiesSurface *map[Point2D]*pb
 
 	// Define a function to check if a point is a valid next step in the path
 	isStepValid := func(pt Point2D) bool {
+		// The target is always a valid step
+		if (pt.X == target.X) && (pt.Y == target.Y) {
+			return true
+		}
+
 		if ent, ok := (*entitiesSurface)[pt]; ok {
 			if ent == fromEntity {
 				return true // Ignore the entity itself as an obstacle

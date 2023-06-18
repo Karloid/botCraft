@@ -67,14 +67,16 @@ public class Strategy {
 
                     // move to resource
                     // TODO just move and attack
+                    System.out.println("distance to resource=" + distanceToResource + " from " + entity.position + " to " + nearestResource.position );
                     if (distanceToResource > 1) {
                         //Api.Point2D nextPoint = path.get(1);
                         entityAction.moveAction = new Api.MoveAction(nearestResource.position, true, true);
                     } else {
                         entityAction.attackAction = new Api.AttackAction(nearestResource.id, null);
                     }
-                    resultAction.entityActions.put(entity.id, entityAction);
                 }
+
+                resultAction.entityActions.put(entity.id, entityAction);
             }
         }
 
