@@ -126,6 +126,12 @@ public class Strategy {
                 // check all points in entity
                 for (int i = 0; i < entityToBuildSize; i++) {
                     for (int j = 0; j < entityToBuildSize; j++) {
+                        // check in bounds
+                        if (x + i >= gameOptions.mapSize || y + j >= gameOptions.mapSize) {
+                            isFree = false;
+                            break;
+                        }
+
                         if (allEntitiesMap.containsKey(new Api.Point2D(x + i, y + j))) {
                             isFree = false;
                             break;

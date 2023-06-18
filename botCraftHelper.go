@@ -12,6 +12,10 @@ func inBounds(options *pb.Options, target *pb.Point2D) bool {
 	return target.X >= 0 && target.X < options.MapSize && target.Y >= 0 && target.Y < options.MapSize
 }
 
+func inBounds2(options *pb.Options, target *Point2D) bool {
+	return target.X >= 0 && target.X < options.MapSize && target.Y >= 0 && target.Y < options.MapSize
+}
+
 func (s BotCraft) fillEntityProperties() []*pb.EntityProperties {
 	entityProperties := make([]*pb.EntityProperties, 0)
 
@@ -55,7 +59,12 @@ func (s BotCraft) fillEntityProperties() []*pb.EntityProperties {
 		PopulationUse:     1,
 		CanMove:           true,
 		BuildProperties: &pb.BuildProperties{
-			Options:    []pb.EntityType{pb.EntityType_WALL, pb.EntityType_HOUSE, pb.EntityType_BUILDER_BASE, pb.EntityType_TURRET},
+			Options: []pb.EntityType{pb.EntityType_WALL,
+				pb.EntityType_HOUSE,
+				pb.EntityType_BUILDER_BASE,
+				pb.EntityType_TURRET,
+				pb.EntityType_MELEE_BASE,
+				pb.EntityType_RANGED_BASE},
 			InitHealth: 100},
 		AttackProperties: &pb.AttackProperties{
 			AttackRange:     1,

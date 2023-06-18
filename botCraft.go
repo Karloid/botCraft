@@ -348,6 +348,75 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 
 	// build
 	pendingBuildActions = shuffleArray(pendingBuildActions)
+	for _, action := range pendingBuildActions {
+		builder := entitiesById[action.EntityId]
+		positionToBuild := action.EntityAction.BuildAction.Position
+		entityTypeToBuild := action.EntityAction.BuildAction.EntityType
+		buildSize := entitiesProperties[entityTypeToBuild].Size
+
+		// check builder can build this type of entity
+		builderProp := entitiesProperties[builder.EntityType]
+		if builderProp.BuildProperties == nil {
+			log.Println("builder can't build entity=", entityTypeToBuild.String(), "playerId=", builder.PlayerId)
+			// TODO log error to player response
+			continue
+		}
+		// check builderProp.BuildProperties.Options contains entityTypeToBuild
+		if !contains(builderProp.BuildProperties.Options, entityTypeToBuild) {
+			log.Println("builder can't build this type of entity=", entityTypeToBuild.String(), "playerId=", builder.PlayerId)
+			// TODO log error to player response
+			continue
+		}
+
+		// check enough resources to build
+		if playersById[builder.PlayerId].Resources < buildSize {
+			log.Println("not enough resources to build entity=", entityTypeToBuild.String(), "playerId=", builder.PlayerId)
+			// TODO log error to player response
+			continue
+		}
+
+		// check all space is free according to size
+		spaceIsFree := true
+		for x := positionToBuild.X; x < positionToBuild.X+buildSize; x++ {
+			for y := positionToBuild.Y; y < positionToBuild.Y+buildSize; y++ {
+				// check if in bounds
+				if !inBounds2(options, &Point2D{x, y}) {
+					spaceIsFree = false
+					break
+				}
+
+				if entitiesSurface[Point2D{x, y}] != nil {
+					spaceIsFree = false
+					break
+				}
+			}
+		}
+
+		if !spaceIsFree {
+			// TODO log error to player response
+			log.Println("space is not free to build entity=", entityTypeToBuild.String(), "playerId=", builder.PlayerId)
+			continue
+		}
+
+		// build
+		playersById[builder.PlayerId].Resources -= buildSize
+		// TODO add active status and proper initial health
+		newEntity := &pb.Entity{
+			Id:         state.NextId,
+			EntityType: action.EntityAction.BuildAction.EntityType,
+			Health:     entitiesProperties[action.EntityAction.BuildAction.EntityType].MaxHealth,
+			PlayerId:   builder.PlayerId,
+			Position:   positionToBuild,
+		}
+		state.NextId++
+
+		// place entity
+		s.placeEntity(&entitiesSurface, &entitiesById, &entitiesProperties, newEntity)
+		entitiesById[newEntity.Id] = newEntity
+		state.Entities = append(state.Entities, newEntity)
+
+		log.Println("built entity=", entityTypeToBuild.String(), "playerId=", builder.PlayerId, "id=", newEntity.Id)
+	}
 
 	// repair
 	// cannot repair dead units
@@ -397,6 +466,15 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 		NewState:        state,
 		NextTurnPlayers: uint8((1 << 0) | (1 << 1)),
 	}
+}
+
+func contains(array []pb.EntityType, entityTypeToCheck pb.EntityType) bool {
+	for _, entityType := range array {
+		if entityType == entityTypeToCheck {
+			return true
+		}
+	}
+	return false
 }
 
 func minOf(a int32, b int32) int32 {
