@@ -37,12 +37,14 @@ public class Strategy {
                     // find path to resource
                     List<Integer> entityIdsToIgnore = new ArrayList<>();
                     entityIdsToIgnore.add(entity.id);
-                    
+                    entityIdsToIgnore.add(nearestResource.id);
+
                     List<Api.Point2D> path = PathFinding.solve(gameOptions, gameState, entity.position, nearestResource.position, entityIdsToIgnore);
 
                     // move to resource
                     // TODO just move and attack
                     if (path.size() > 1) {
+                        //Api.Point2D nextPoint = path.get(1);
                         entityAction.moveAction = new Api.MoveAction(nearestResource.position, true, true);
                     } else {
                         entityAction.attackAction = new Api.AttackAction(nearestResource.id, null);
