@@ -6,12 +6,13 @@ import (
 	manager "github.com/bot-games/game-manager"
 	"github.com/go-qbit/rpc"
 	"github.com/karloid/botCraft/pb"
+	"strconv"
 )
 
 type reqV1 struct {
-	Token         string                   `json:"token" desc:"User bot token from [profile](/profile)"`
-	GameId        string                   `json:"game_id"`
-	EntityActions map[int32]entityActionV1 `json:"entity_actions"`
+	Token         string                    `json:"token" desc:"User bot token from [profile](/profile)"`
+	GameId        string                    `json:"game_id"`
+	EntityActions map[string]entityActionV1 `json:"entity_actions"`
 }
 
 type entityActionV1 struct {
@@ -85,7 +86,7 @@ func (m *Method) V1(ctx context.Context, r *reqV1) (*struct{}, error) {
 func mapRequestToPbAction(r *reqV1) *pb.Action {
 	actions := make(map[int32]*pb.EntityAction)
 
-	for id, reqEntityAction := range r.EntityActions {
+	for idString, reqEntityAction := range r.EntityActions {
 		pbEntityAction := &pb.EntityAction{}
 
 		// move action
@@ -137,8 +138,12 @@ func mapRequestToPbAction(r *reqV1) *pb.Action {
 				TargetId: repairAction.TargetId,
 			}
 		}
-
-		actions[id] = pbEntityAction
+		// convert idString to int32
+		id, err := strconv.Atoi(idString)
+		if err != nil {
+			continue
+		}
+		actions[int32(id)] = pbEntityAction
 	}
 
 	return &pb.Action{

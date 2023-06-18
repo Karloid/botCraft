@@ -26,7 +26,7 @@ func (d Point2D) toPb() *pb.Point2D {
 }
 
 func (s BotCraft) Init() (proto.Message, proto.Message, uint8) {
-	maxMapSize := int32(32)
+	maxMapSize := int32(18)
 
 	players := make([]*pb.Player, 0)
 
