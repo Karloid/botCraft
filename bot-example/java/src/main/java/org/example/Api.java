@@ -56,6 +56,10 @@ public class Api {
                     ", y=" + y +
                     '}';
         }
+
+        public int distance(Point2D other) {
+            return Math.abs(x - other.x) + Math.abs(y - other.y);
+        }
     }
 
     public static class BuildProperties {
@@ -274,6 +278,11 @@ public class Api {
 
         @SerializedName("position")
         public Point2D position;
+
+        public BuildAction(String entityType, Point2D position) {
+            this.entityType = entityType;
+            this.position = position;
+        }
     }
 
     public static class AttackAction {

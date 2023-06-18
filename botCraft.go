@@ -71,7 +71,7 @@ func (s BotCraft) Init() (proto.Message, proto.Message, uint8) {
 	return &pb.Options{
 		MapSize:          maxMapSize,
 		FogOfWar:         false,
-		MaxTickCount:     300,
+		MaxTickCount:     1000,
 		EntityProperties: entityProperties,
 	}, state, uint8((1 << 0) | (1 << 1))
 }
@@ -267,21 +267,15 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 			continue
 		}
 
-		var nextStep Point2D = Point2D{X: entity.Position.X, Y: entity.Position.Y}
+		pathToTarget := s.findPath(options, &entitiesSurface, &entitiesById, &entitiesProperties, entity, target)
 
-		if nextStep.X < target.X {
-			nextStep.X++
-		} else if nextStep.X > target.X {
-			nextStep.X--
-		} else if nextStep.Y < target.Y {
-			nextStep.Y++
-		} else if nextStep.Y > target.Y {
-			nextStep.Y--
+		if len(pathToTarget) == 0 {
+			continue
 		}
+		var nextStep *Point2D = pathToTarget[1] // place occupied
 
-		// place occupied
 		//TODO  check all new positions for all surface
-		entityWithOccupiedNextStep := entitiesSurface[nextStep]
+		entityWithOccupiedNextStep := entitiesSurface[*nextStep]
 		if entityWithOccupiedNextStep != nil && entityWithOccupiedNextStep.Id != entity.Id && entityWithOccupiedNextStep.PlayerId != entity.PlayerId {
 			pendingAttackActions = append(pendingAttackActions, &EntityIdPlusAction{
 				EntityId: entity.Id,
@@ -292,7 +286,7 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 				},
 			})
 		} else {
-			pendingMovePositions[entity.Id] = s.point2DtoProto(&nextStep)
+			pendingMovePositions[entity.Id] = s.point2DtoProto(nextStep)
 		}
 	}
 
@@ -539,4 +533,82 @@ func (s BotCraft) removeEntity(
 			delete(*entitiesSurface, Point2D{X: x2, Y: y2})
 		}
 	}
+}
+
+func (s BotCraft) findPath(options *pb.Options, entitiesSurface *map[Point2D]*pb.Entity, entitiesById *map[int32]*pb.Entity, entityProperties *map[pb.EntityType]*pb.EntityProperties, fromEntity *pb.Entity, target *pb.Point2D) []*Point2D {
+	// bfs to find path
+
+	// Define a struct to represent each node in the graph
+	type node struct {
+		point          Point2D
+		parent         *node
+		distanceToRoot int
+	}
+
+	// Create a queue to hold the nodes that we need to explore
+	queue := []*node{{point: point2DFromProto(fromEntity.Position), distanceToRoot: 0}}
+
+	// Create a set to hold the nodes that we've already explored
+	exploredNodes := make(map[Point2D]bool)
+
+	// Define a function to check if a point is a valid next step in the path
+	isStepValid := func(pt Point2D) bool {
+		if ent, ok := (*entitiesSurface)[pt]; ok {
+			if ent == fromEntity {
+				return true // Ignore the entity itself as an obstacle
+			}
+			props := (*entityProperties)[ent.GetEntityType()]
+			if !props.GetCanMove() || !ent.GetActive() {
+				return false // Entities that can't move or aren't active are obstacles
+			}
+		}
+		return true
+	}
+
+	// Continue searching until we've explored all possible nodes or found the target
+	for len(queue) > 0 {
+		currNode := queue[0]
+		queue = queue[1:]
+
+		// Check if this node is the target, and if so, return the path
+		if currNode.point.X == target.X && currNode.point.Y == target.Y {
+			path := []*Point2D{&currNode.point}
+			for currNode.parent != nil {
+				currNode = currNode.parent
+				path = append([]*Point2D{&currNode.point}, path...)
+			}
+			return path
+		}
+
+		// Explore the four adjacent points
+		for _, adjPt := range []Point2D{
+			{currNode.point.X + 1, currNode.point.Y},
+			{currNode.point.X - 1, currNode.point.Y},
+			{currNode.point.X, currNode.point.Y + 1},
+			{currNode.point.X, currNode.point.Y - 1},
+		} {
+			// skip if out of bounds
+			if adjPt.X < 0 || adjPt.X >= options.GetMapSize() || adjPt.Y < 0 || adjPt.Y >= options.GetMapSize() {
+				continue
+			}
+
+			// Skip the point if it's already been explored or is not a valid step
+			if exploredNodes[adjPt] || !isStepValid(adjPt) {
+				continue
+			}
+
+			// Add the adjacent point to the queue
+			nextNode := &node{
+				point:          adjPt,
+				parent:         currNode,
+				distanceToRoot: currNode.distanceToRoot + 1,
+			}
+			queue = append(queue, nextNode)
+
+			// Mark the point as explored
+			exploredNodes[adjPt] = true
+		}
+	}
+
+	return nil // No path to the target was found
 }
