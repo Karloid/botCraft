@@ -103,6 +103,7 @@ func (m *Method) V1(ctx context.Context, r *reqV1) (*stateV1, error) {
 				X: entity.Position.X,
 				Y: entity.Position.Y,
 			},
+			Active: entity.Active,
 		})
 	}
 

@@ -16,7 +16,7 @@ type reqV1 struct {
 
 type buildPropertiesV1 struct {
 	Options    []string `json:"options"`
-	InitHealth int32    `json:"init_health"`
+	InitHealth *int32   `json:"init_health"`
 }
 
 type attackPropertiesV1 struct {
@@ -85,9 +85,16 @@ func (m *Method) V1(ctx context.Context, r *reqV1) (*gameV1, error) {
 
 		var buildProperties *buildPropertiesV1 = nil
 		if entityProperties.BuildProperties != nil {
+
+			// if have initHealth in &entityProperties.BuildProperties.InitHealth.Value
+			var initHealth *int32 = nil
+			if entityProperties.BuildProperties.InitHealth != nil {
+				initHealth = &entityProperties.BuildProperties.InitHealth.Value
+			}
+
 			buildProperties = &buildPropertiesV1{
 				Options:    convertToStringArr(entityProperties.BuildProperties.Options),
-				InitHealth: entityProperties.BuildProperties.InitHealth,
+				InitHealth: initHealth,
 			}
 		}
 

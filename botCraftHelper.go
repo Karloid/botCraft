@@ -46,7 +46,7 @@ func (s BotCraft) fillEntityProperties() []*pb.EntityProperties {
 		PopulationProvide: 5,
 		BuildProperties: &pb.BuildProperties{
 			Options:    []pb.EntityType{pb.EntityType_BUILDER_UNIT},
-			InitHealth: 100},
+			InitHealth: nil},
 	})
 	entityProperties = append(entityProperties, &pb.EntityProperties{
 		EntityType:        pb.EntityType_BUILDER_UNIT,
@@ -65,7 +65,7 @@ func (s BotCraft) fillEntityProperties() []*pb.EntityProperties {
 				pb.EntityType_TURRET,
 				pb.EntityType_MELEE_BASE,
 				pb.EntityType_RANGED_BASE},
-			InitHealth: 100},
+			InitHealth: &pb.Int32Value2{Value: 5}},
 		AttackProperties: &pb.AttackProperties{
 			AttackRange:     1,
 			Damage:          1,
@@ -96,7 +96,7 @@ func (s BotCraft) fillEntityProperties() []*pb.EntityProperties {
 		PopulationProvide: 5,
 		BuildProperties: &pb.BuildProperties{
 			Options:    []pb.EntityType{pb.EntityType_MELEE_UNIT},
-			InitHealth: 100,
+			InitHealth: nil,
 		},
 	})
 
@@ -127,7 +127,7 @@ func (s BotCraft) fillEntityProperties() []*pb.EntityProperties {
 		PopulationProvide: 5,
 		BuildProperties: &pb.BuildProperties{
 			Options:    []pb.EntityType{pb.EntityType_RANGED_UNIT},
-			InitHealth: 100,
+			InitHealth: nil,
 		},
 	})
 

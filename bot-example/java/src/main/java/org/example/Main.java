@@ -1,6 +1,7 @@
 package org.example;
 
 import java.net.SocketTimeoutException;
+import java.util.Map;
 import java.util.Random;
 
 public class Main {
@@ -78,7 +79,10 @@ public class Main {
             }
 
             Action action = strategy.getAction(gameState);
-            api.applyAction(new Api.ActionRequest(apiToken, actualGameId, action.entityActions));
+            Map<Integer, Api.EntityAction> entityActions = action.entityActions;
+            // filter empty actions out and pack back to map to save some space :>
+            entityActions.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+            api.applyAction(new Api.ActionRequest(apiToken, actualGameId, entityActions));
         }
     }
 }

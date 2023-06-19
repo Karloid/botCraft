@@ -188,11 +188,10 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 		playersById[player.Id] = player
 	}
 
-	log.Println("ApplyActions ", "actions:", len(actions))
-
 	pendingMoveActions := make([]*EntityIdPlusAction, 0)
 	pendingBuildActions := make([]*EntityIdPlusAction, 0)
 	pendingAttackActions := make([]*EntityIdPlusAction, 0)
+	pendingRepairActions := make([]*EntityIdPlusAction, 0)
 
 	for _, action := range actions {
 		pbAction := action.Action.(*pb.Action)
@@ -210,10 +209,18 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 			entity, ok := entitiesById[entityId]
 			if !ok {
 				// TODO log error to player response
+				log.Println("ignore action: not existent", entityId)
 				continue
 			}
 			if entity.PlayerId != playerId {
 				// TODO log error to player response
+				log.Println("ignore action: Entity not belongs to player", entityId)
+				continue
+			}
+
+			if !entity.Active {
+				// TODO log error to player response
+				log.Println("ignore action: Entity is not active", entityId)
 				continue
 			}
 
@@ -240,9 +247,29 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 				pendingBuildActions = append(pendingBuildActions, &entityIdPlusAction)
 			} else if entityAction.AttackAction != nil {
 				pendingAttackActions = append(pendingAttackActions, &entityIdPlusAction)
+			} else if entityAction.RepairAction != nil {
+				pendingRepairActions = append(pendingRepairActions, &entityIdPlusAction)
 			}
 		}
 	}
+
+	log.Println(
+		"ApplyActions ",
+		"playerActions:",
+		len(actions),
+		"MoveActions:",
+		len(pendingMoveActions),
+		"BuildActions:",
+		len(pendingBuildActions),
+		"AttackActions:",
+		len(pendingAttackActions),
+		"RepairActions:",
+		len(pendingRepairActions),
+		"Player[0] resources:",
+		state.Players[0].Resources,
+		"[1]:",
+		state.Players[1].Resources,
+	)
 
 	// apply steps
 
@@ -272,7 +299,8 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 		// print path from entity to target
 		//log.Println("pathToTarget from=", entity.Position.X, entity.Position.Y, " to=", target.X, target.Y, "path=", pathToTarget)
 
-		if len(pathToTarget) == 0 {
+		if len(pathToTarget) < 1 {
+			log.Println("pathToTarget not found from=", entity.Position.X, entity.Position.Y, " to=", target.X, target.Y)
 			continue
 		}
 		var nextStep *Point2D = pathToTarget[1] // place occupied
@@ -374,6 +402,7 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 		}
 
 		// check enough resources to build
+		// TODO add cost per each created entity
 		if playersById[builder.PlayerId].Resources < buildSize {
 			log.Println("not enough resources to build entity=", entityTypeToBuild.String(), "playerId=", builder.PlayerId)
 			// TODO log error to player response
@@ -413,12 +442,20 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 		// build
 		playersById[builder.PlayerId].Resources -= buildSize
 		// TODO add active status and proper initial health
+		initialHealth := entitiesProperties[action.EntityAction.BuildAction.EntityType].MaxHealth
+		active := true
+		if builderProp.BuildProperties.InitHealth != nil {
+			initialHealth = builderProp.BuildProperties.InitHealth.Value
+			active = false
+		}
+
 		newEntity := &pb.Entity{
 			Id:         state.NextId,
 			EntityType: action.EntityAction.BuildAction.EntityType,
-			Health:     entitiesProperties[action.EntityAction.BuildAction.EntityType].MaxHealth,
+			Health:     initialHealth,
 			PlayerId:   builder.PlayerId,
 			Position:   positionToBuild,
+			Active:     active,
 		}
 		state.NextId++
 
@@ -431,6 +468,49 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 	}
 
 	// repair
+	for _, action := range pendingRepairActions {
+		repairer, ok := entitiesById[action.EntityId]
+		if !ok {
+			log.Println("repairer is dead probably id=", action.EntityId)
+			continue
+		}
+
+		target, ok := entitiesById[action.EntityAction.RepairAction.TargetId]
+		if !ok {
+			log.Println("target is dead probably id=", action.EntityAction.RepairAction.TargetId)
+			continue
+		}
+		if repairer.PlayerId != target.PlayerId {
+			log.Println("repairer and target are not owned by same player", "repairer.PlayerId=", repairer.PlayerId, "target.PlayerId=", target.PlayerId)
+			continue
+		}
+		repairerProp := entitiesProperties[repairer.EntityType]
+		if repairerProp.RepairProperties == nil || repairerProp.RepairProperties.ValidTargets == nil {
+			log.Println("repairer can't repair anything=", target.EntityType.String(), "entityId=", repairer.Id)
+			continue
+		}
+
+		if contains(repairerProp.RepairProperties.ValidTargets, target.EntityType) == false {
+			log.Println("repairer can't repair this type of entity=", target.EntityType.String(), "repairerId=", repairer.Id)
+			continue
+		}
+
+		// check repairer is adjacent to target
+		distanceToTarget := distanceTo(&entitiesProperties, options, repairer, target.EntityType, target.Position)
+		if distanceToTarget > 1 {
+			log.Println("repairer is not adjacent to target", "repairerId=", repairer.Id, "targetId=", target.Id, "distance=", distanceToTarget)
+			continue
+		}
+
+		// repair
+		target.Health += repairerProp.RepairProperties.Power
+		if target.Health >= entitiesProperties[target.EntityType].MaxHealth {
+			target.Health = entitiesProperties[target.EntityType].MaxHealth
+			target.Active = true
+		}
+		log.Println("repaired entity=", target.EntityType.String(), "playerId=", repairer.PlayerId, "id=", target.Id, "newHealth=", target.Health)
+	}
+
 	// cannot repair dead units
 
 	// move

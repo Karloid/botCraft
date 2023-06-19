@@ -253,6 +253,14 @@ public class Api {
 
         @SerializedName("repair_action")
         public RepairAction repairAction;
+
+        public boolean isNotEmpty() {
+            return moveAction != null || buildAction != null || attackAction != null || repairAction != null;
+        }
+
+        public boolean isEmpty() {
+            return !isNotEmpty();
+        }
     }
 
     public static class MoveAction {
@@ -309,6 +317,10 @@ public class Api {
     public static class RepairAction {
         @SerializedName("target_id")
         public int targetID;
+
+        public RepairAction(int targetID) {
+            this.targetID = targetID;
+        }
     }
 
     public GameOptions join(String token, boolean debug) {

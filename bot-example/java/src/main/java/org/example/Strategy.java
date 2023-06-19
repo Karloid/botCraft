@@ -19,105 +19,152 @@ public class Strategy {
         boolean startedBuildingMeleeBase = false;
         boolean enoughResourcesForMeleeBase = gameState.getMyPlayer().resources >= gameOptions.getEntityProperties("MELEE_BASE").cost;
 
-        for (Api.Entity entity : gameState.entities) {
-            if (entity.entityType.equals("BUILDER_UNIT") && entity.playerId == gameState.myId) {
-                Api.EntityAction entityAction = new Api.EntityAction();
+        List<Api.Entity> myEntities = gameState.entities.stream()
+                .filter(entity -> entity.playerId == gameState.myId)
+                .toList();
 
-                // find nearest resource
-                Api.Entity nearestResource = null;
-                int nearestResourceDistance = Integer.MAX_VALUE;
-                for (Api.Entity resource : gameState.entities) {
-                    if (resource.entityType.equals("RESOURCE")) {
-                        int distance = Math.abs(resource.position.x - entity.position.x) + Math.abs(resource.position.y - entity.position.y);
-                        if (distance < nearestResourceDistance) {
-                            nearestResourceDistance = distance;
-                            nearestResource = resource;
-                        }
-                    }
-                }
+        List<Api.Entity> myBuilderUnits = gameState.entities.stream()
+                .filter(entity -> entity.entityType.equals("BUILDER_UNIT") && entity.playerId == gameState.myId)
+                .toList();
 
-                if (!iHaveMeleeBase && !startedBuildingMeleeBase && enoughResourcesForMeleeBase) {
-                    // build melee base
-                    // find free space
-                    Api.Point2D meleeBaseBuildPoint = findFreeSpaceFor(gameOptions, gameState, "MELEE_BASE", entity);
-                    if (meleeBaseBuildPoint != null) {
-                        startedBuildingMeleeBase = true;
-                        nearestResource = null;
-                        if (distanceToEntity(gameOptions, entity, "MELEE_BASE", meleeBaseBuildPoint) > 1) {
-                            // move to build point
-                            System.out.println("move to build point=" + meleeBaseBuildPoint + " from " + entity.position);
-                            entityAction.moveAction = new Api.MoveAction(meleeBaseBuildPoint, true, true);
-                        } else {
-                            System.out.println("actual build point " + meleeBaseBuildPoint + " from " + entity.position);
-                            entityAction.buildAction = new Api.BuildAction("MELEE_BASE", meleeBaseBuildPoint);
-                        }
-                    }
-                }
+        List<Api.Entity> myMeleeUnits = gameState.entities.stream()
+                .filter(entity -> entity.entityType.equals("MELEE_UNIT") && entity.playerId == gameState.myId)
+                .toList();
+
+        List<Api.Entity> myMeleeBases = gameState.entities.stream()
+                .filter(entity -> entity.entityType.equals("MELEE_BASE") && entity.playerId == gameState.myId)
+                .toList();
+
+        List<Api.Entity> myBuilderBases = gameState.entities.stream()
+                .filter(entity -> entity.entityType.equals("MELEE_BASE") && entity.playerId == gameState.myId)
+                .toList();
+
+        // other types
 
 
-                if (nearestResource != null) {
-                    // find path to resource
-                    List<Integer> entityIdsToIgnore = new ArrayList<>();
-                    entityIdsToIgnore.add(entity.id);
-                    entityIdsToIgnore.add(nearestResource.id);
-
-
-                    int distanceToResource = distanceToEntity(gameOptions, entity, "RESOURCE", nearestResource.position);
-                    //List<Api.Point2D> path = PathFinding.solve(gameOptions, gameState, entity.position, nearestResource.position, entityIdsToIgnore);
-
-                    // move to resource
-                    // TODO just move and attack
-                    System.out.println("distance to resource=" + distanceToResource + " from " + entity.position + " to " + nearestResource.position );
-                    if (distanceToResource > 1) {
-                        //Api.Point2D nextPoint = path.get(1);
-                        entityAction.moveAction = new Api.MoveAction(nearestResource.position, true, true);
-                    } else {
-                        entityAction.attackAction = new Api.AttackAction(nearestResource.id, null);
-                    }
-                }
-
-                resultAction.entityActions.put(entity.id, entityAction);
+        for (Api.Entity myBuilder : myBuilderUnits) {
+            if (!myBuilder.active) {
+                continue;
             }
+            Api.EntityAction entityAction = new Api.EntityAction();
+            resultAction.entityActions.put(myBuilder.id, entityAction);
+
+            List<Api.Entity> entitiesToActivate = myEntities.stream()
+                    .filter(entity -> !entity.active)
+                    .sorted(Comparator.comparingInt(entity -> distanceToEntity(gameOptions, myBuilder, entity.entityType, entity.position)))
+                    .toList();
             
-            if (entity.entityType.equals("MELEE_BASE") && entity.playerId == gameState.myId) {
-                int meleeUnitCost = gameOptions.getEntityProperties("MELEE_UNIT").cost;
-                if (meleeUnitCost < gameState.getMyPlayer().resources) {
-                    List<Api.Point2D> positionsToBuildAvailable = findFreeAdjactedSpaceFor(gameOptions, gameState, entity);
-
-                    if (!positionsToBuildAvailable.isEmpty()) {
-                        Api.EntityAction entityAction = new Api.EntityAction();
-                        entityAction.buildAction = new Api.BuildAction("MELEE_UNIT", positionsToBuildAvailable.get(0));
-                        resultAction.entityActions.put(entity.id, entityAction);
-                    }
+            if (!entitiesToActivate.isEmpty()) {
+                // check distance
+                if (distanceToEntity(gameOptions, myBuilder, entitiesToActivate.get(0).entityType, entitiesToActivate.get(0).position) > 1) {
+                    // move to entity
+                    entityAction.moveAction = new Api.MoveAction(entitiesToActivate.get(0).position, true, true);
+                } else {
+                    entityAction.repairAction = new Api.RepairAction(entitiesToActivate.get(0).id);
                 }
+                continue;
             }
 
-            if (entity.entityType.equals("MELEE_UNIT") && entity.playerId == gameState.myId) {
-                Api.EntityAction entityAction = new Api.EntityAction();
-                Api.Entity nearestEnemy = null;
-                int nearestEnemyDistance = Integer.MAX_VALUE;
-                for (Api.Entity enemy : gameState.entities) {
-                    if (enemy.playerId != gameState.myId && !Objects.equals(enemy.entityType, "RESOURCE")){
-                        int distance = Math.abs(enemy.position.x - entity.position.x) + Math.abs(enemy.position.y - entity.position.y);
-                        if (distance < nearestEnemyDistance) {
-                            nearestEnemyDistance = distance;
-                            nearestEnemy = enemy;
-                        }
-                    }
-                }
-
-                if (nearestEnemy != null) {
-                    // find path to resource
-                    int distanceToEnemy = distanceToEntity(gameOptions, entity, nearestEnemy.entityType, nearestEnemy.position);
-
-                    if (distanceToEnemy > 1) {
-                        entityAction.moveAction = new Api.MoveAction(nearestEnemy.position, true, true);
+            if (!iHaveMeleeBase && !startedBuildingMeleeBase && enoughResourcesForMeleeBase) {
+                // build melee base
+                // find free space
+                Api.Point2D meleeBaseBuildPoint = findFreeSpaceFor(gameOptions, gameState, "MELEE_BASE", myBuilder);
+                if (meleeBaseBuildPoint != null) {
+                    startedBuildingMeleeBase = true;
+                    if (distanceToEntity(gameOptions, myBuilder, "MELEE_BASE", meleeBaseBuildPoint) > 1) {
+                        // move to build point
+                        System.out.println("move to build point=" + meleeBaseBuildPoint + " from " + myBuilder.position);
+                        entityAction.moveAction = new Api.MoveAction(meleeBaseBuildPoint, true, true);
                     } else {
-                        entityAction.attackAction = new Api.AttackAction(nearestEnemy.id, null);
+                        System.out.println("actual build point " + meleeBaseBuildPoint + " from " + myBuilder.position);
+                        entityAction.buildAction = new Api.BuildAction("MELEE_BASE", meleeBaseBuildPoint);
                     }
-                    resultAction.entityActions.put(entity.id, entityAction);
+                    continue;
                 }
             }
+
+            // find nearest resource
+            Api.Entity nearestResource = null;
+            int nearestResourceDistance = Integer.MAX_VALUE;
+            for (Api.Entity resource : gameState.entities) {
+                if (resource.entityType.equals("RESOURCE")) {
+                    int distance = Math.abs(resource.position.x - myBuilder.position.x) + Math.abs(resource.position.y - myBuilder.position.y);
+                    if (distance < nearestResourceDistance) {
+                        nearestResourceDistance = distance;
+                        nearestResource = resource;
+                    }
+                }
+            }
+
+            if (nearestResource != null) {
+                // find path to resource
+                List<Integer> entityIdsToIgnore = new ArrayList<>();
+                entityIdsToIgnore.add(myBuilder.id);
+                entityIdsToIgnore.add(nearestResource.id);
+
+
+                int distanceToResource = distanceToEntity(gameOptions, myBuilder, "RESOURCE", nearestResource.position);
+
+
+                System.out.println("distance to resource=" + distanceToResource + " from " + myBuilder.position + " to " + nearestResource.position);
+                if (distanceToResource > 1) {
+                    // move to resource
+                    entityAction.moveAction = new Api.MoveAction(nearestResource.position, true, true);
+                } else {
+                    entityAction.attackAction = new Api.AttackAction(nearestResource.id, null);
+                }
+                continue;
+            }
+        }
+
+        for (Api.Entity myMeleeBase : myMeleeBases) {
+            if (!myMeleeBase.active) {
+                continue;
+            }
+
+            Api.EntityAction entityAction = new Api.EntityAction();
+            resultAction.entityActions.put(myMeleeBase.id, entityAction);
+
+            int meleeUnitCost = gameOptions.getEntityProperties("MELEE_UNIT").cost;
+            if (meleeUnitCost < gameState.getMyPlayer().resources) {
+                List<Api.Point2D> positionsToBuildAvailable = findFreeAdjactedSpaceFor(gameOptions, gameState, myMeleeBase);
+
+                if (!positionsToBuildAvailable.isEmpty()) {
+                    entityAction.buildAction = new Api.BuildAction("MELEE_UNIT", positionsToBuildAvailable.get(0));
+                }
+            }
+        }
+
+        for (Api.Entity myMeleeUnit : myMeleeUnits) {
+            if (!myMeleeUnit.active) {
+                continue;
+            }
+            Api.EntityAction entityAction = new Api.EntityAction();
+            resultAction.entityActions.put(myMeleeUnit.id, entityAction);
+
+            Api.Entity nearestEnemy = null;
+            int nearestEnemyDistance = Integer.MAX_VALUE;
+            for (Api.Entity enemy : gameState.entities) {
+                if (enemy.playerId != gameState.myId && !Objects.equals(enemy.entityType, "RESOURCE")) {
+                    int distance = Math.abs(enemy.position.x - myMeleeUnit.position.x) + Math.abs(enemy.position.y - myMeleeUnit.position.y);
+                    if (distance < nearestEnemyDistance) {
+                        nearestEnemyDistance = distance;
+                        nearestEnemy = enemy;
+                    }
+                }
+            }
+
+            if (nearestEnemy != null) {
+                // find path to resource
+                int distanceToEnemy = distanceToEntity(gameOptions, myMeleeUnit, nearestEnemy.entityType, nearestEnemy.position);
+
+                if (distanceToEnemy > 1) {
+                    entityAction.moveAction = new Api.MoveAction(nearestEnemy.position, true, true);
+                } else {
+                    entityAction.attackAction = new Api.AttackAction(nearestEnemy.id, null);
+                }
+            }
+
         }
 
 
@@ -239,6 +286,7 @@ public class Strategy {
                 for (Api.Entity entity : gameState.entities) {
                     var entityProperties = gameOptions.getEntityProperties(entity.entityType);
                     int entitySize = entityProperties.size;
+
                     // check all points in entity
                     for (int i = 0; i < entitySize; i++) {
                         for (int j = 0; j < entitySize; j++) {
@@ -249,7 +297,7 @@ public class Strategy {
                         }
                     }
                 }
-                System.out.print(foundEntity == null ? "." : getCharByType(foundEntity));
+                System.out.print(foundEntity == null ? "." : foundEntity.playerId != -1 && foundEntity.playerId != gameState.getMyPlayer().id ? "*" : getCharByType(foundEntity));
             }
             System.out.println();
         }

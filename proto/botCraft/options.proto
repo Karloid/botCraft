@@ -4,6 +4,11 @@ package botCraft;
 
 option go_package = "/pb";
 
+message Int32Value2 {
+  // The int32 value.
+  int32 value = 1;
+}
+
 message Options {
   int32 map_size = 1;
   bool fog_of_war = 2;
@@ -43,7 +48,7 @@ message EntityProperties {
 
 message BuildProperties {
   repeated EntityType options = 1;
-  int32 init_health = 2;
+  Int32Value2 init_health = 2;
 }
 
 message AttackProperties {
