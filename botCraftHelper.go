@@ -4,10 +4,6 @@ import (
 	"github.com/karloid/botCraft/pb"
 )
 
-func hasWinner(state *pb.State) bool {
-	return false
-}
-
 func inBounds(options *pb.Options, target *pb.Point2D) bool {
 	return target.X >= 0 && target.X < options.MapSize && target.Y >= 0 && target.Y < options.MapSize
 }

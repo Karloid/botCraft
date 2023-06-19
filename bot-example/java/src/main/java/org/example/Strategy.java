@@ -53,7 +53,7 @@ public class Strategy {
                     .filter(entity -> !entity.active)
                     .sorted(Comparator.comparingInt(entity -> distanceToEntity(gameOptions, myBuilder, entity.entityType, entity.position)))
                     .toList();
-            
+
             if (!entitiesToActivate.isEmpty()) {
                 // check distance
                 if (distanceToEntity(gameOptions, myBuilder, entitiesToActivate.get(0).entityType, entitiesToActivate.get(0).position) > 1) {
@@ -277,7 +277,13 @@ public class Strategy {
     }
 
     private void printMap(Api.GameState gameState) {
-        System.out.println("\n\nMy resources = " + gameState.getMyPlayer().resources);
+        System.out.println("\n\nMy resources = " + gameState.getMyPlayer().resources + " my score= " + gameState.getMyPlayer().score);
+        // print enemy resources and score
+        for (Api.Player player : gameState.players) {
+            if (player.id != gameState.getMyPlayer().id) {
+                System.out.println("Enemy id=" + player.id + " resources = " + player.resources + " enemy score= " + player.score);
+            }
+        }
         System.out.println("Map:");
         for (int y = 0; y < gameOptions.mapSize; y++) {
             for (int x = 0; x < gameOptions.mapSize; x++) {

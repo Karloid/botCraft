@@ -351,6 +351,12 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 				player := playersById[entity.PlayerId]
 				player.Resources += resources
 			}
+
+			// collect score
+			if actualDamage > 0 && target.Health <= 0 {
+				player := playersById[entity.PlayerId]
+				player.Score += targetProperties.DestroyScore
+			}
 		}
 	}
 
@@ -405,6 +411,30 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 		// TODO add cost per each created entity
 		if playersById[builder.PlayerId].Resources < buildSize {
 			log.Println("not enough resources to build entity=", entityTypeToBuild.String(), "playerId=", builder.PlayerId)
+			// TODO log error to player response
+			continue
+		}
+
+		entityToBuildCost := entitiesProperties[entityTypeToBuild].Cost
+		if playersById[builder.PlayerId].Resources < entityToBuildCost {
+			log.Println("not enough resources to build entity=", entityTypeToBuild.String(), "playerId=", builder.PlayerId)
+			// TODO log error to player response
+			continue
+		}
+
+		// check population is not full
+		playerCurrentPopulation := int32(0)
+		playerAllowedPopulation := int32(0)
+		for _, entity := range entitiesById {
+			if entity.PlayerId == builder.PlayerId {
+				playerCurrentPopulation += entitiesProperties[entity.EntityType].PopulationUse
+				playerAllowedPopulation += entitiesProperties[entity.EntityType].PopulationProvide
+			}
+		}
+
+		populationUse := entitiesProperties[entityTypeToBuild].PopulationUse
+		if playerCurrentPopulation+populationUse > playerAllowedPopulation {
+			log.Println("not enough population to build entity=", entityTypeToBuild.String(), "playerId=", builder.PlayerId)
 			// TODO log error to player response
 			continue
 		}
@@ -464,7 +494,24 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 		entitiesById[newEntity.Id] = newEntity
 		state.Entities = append(state.Entities, newEntity)
 
-		log.Println("built entity=", entityTypeToBuild.String(), "playerId=", builder.PlayerId, "id=", newEntity.Id)
+		// consume resources
+		playersById[builder.PlayerId].Resources -= entityToBuildCost
+
+		// add score
+		playersById[builder.PlayerId].Score += entitiesProperties[entityTypeToBuild].BuildScore
+
+		log.Println(
+			"built entity=",
+			entityTypeToBuild.String(),
+			"playerId=",
+			builder.PlayerId,
+			"id=",
+			newEntity.Id,
+			"current Population=",
+			playerCurrentPopulation+populationUse,
+			"allowed Population=",
+			playerAllowedPopulation,
+		)
 	}
 
 	// repair
@@ -536,19 +583,33 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 
 	// final checks
 
-	if hasWinner(state) {
-		return &manager.TickResult{
-			GameFinished: true,
-			Winner:       1 << 0,
-			NewState:     state,
+	/*	if hasWinner(state) {
+			return &manager.TickResult{
+				GameFinished: true,
+				Winner:       1 << 0,
+				NewState:     state,
+			}
 		}
-	}
-
+	*/
+	// TODO check if entities are all dead
 	if state.Tick >= options.MaxTickCount {
-		// TODO calc proper winner
+		// find player with highest score and set it as winner
+		maxScore := int32(math.MinInt32)
+		for _, player := range state.Players {
+			if player.Score > maxScore {
+				maxScore = player.Score
+			}
+		}
+		winner := uint8(0)
+		for _, player := range state.Players {
+			if player.Score == maxScore {
+				winner = 1 << player.Id
+			}
+		}
+		// TODO handle tie
 		return &manager.TickResult{
 			GameFinished: true,
-			Winner:       1 << 0,
+			Winner:       winner,
 			NewState:     state,
 		}
 	}
