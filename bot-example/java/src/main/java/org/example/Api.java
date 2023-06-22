@@ -20,6 +20,7 @@ public class Api {
     public Api(String baseUrl) {
         this.baseUrl = baseUrl;
         this.client = new OkHttpClient.Builder()
+                .readTimeout(60000, java.util.concurrent.TimeUnit.MILLISECONDS)
                 .build();
         this.gson = new Gson();
     }
@@ -297,21 +298,9 @@ public class Api {
         @SerializedName("target_id")
         public Integer targetId;
 
-        @SerializedName("auto_attack")
-        public AutoAttack autoAttack;
-
-        public AttackAction(Integer target, AutoAttack autoAttack) {
+        public AttackAction(Integer target) {
             this.targetId = target;
-            this.autoAttack = autoAttack;
         }
-    }
-
-    public static class AutoAttack {
-        @SerializedName("pathfind_range")
-        public int pathfindRange;
-
-        @SerializedName("valid_targets")
-        public List<String> validTargets;
     }
 
     public static class RepairAction {

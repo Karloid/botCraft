@@ -34,14 +34,14 @@ type buildActionV1 struct {
 }
 
 type attackActionV1 struct {
-	TargetId   *int32        `json:"target_id"`
-	AutoAttack *autoAttackV1 `json:"auto_attack"`
+	TargetId *int32 `json:"target_id"`
+	//	AutoAttack *autoAttackV1 `json:"auto_attack"`
 }
 
-type autoAttackV1 struct {
+/*type autoAttackV1 struct {
 	PathfindRange int32    `json:"pathfind_range"`
 	ValidTargets  []string `json:"valid_targets"`
-}
+}*/
 
 type repairActionV1 struct {
 	TargetId int32 `json:"target_id"`
@@ -122,12 +122,13 @@ func mapRequestToPbAction(r *reqV1) *pb.Action {
 				}
 			}
 
-			if autoAttack := attackAction.AutoAttack; autoAttack != nil {
+			// not supported
+			/*	if autoAttack := attackAction.AutoAttack; autoAttack != nil {
 				pbAttackAction.AutoAttack = &pb.AutoAttack{
 					PathfindRange: autoAttack.PathfindRange,
 					ValidTargets:  mapToPbEntityTypes(autoAttack.ValidTargets),
 				}
-			}
+			}*/
 
 			pbEntityAction.AttackAction = pbAttackAction
 		}

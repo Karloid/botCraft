@@ -109,7 +109,7 @@ public class Strategy {
                     // move to resource
                     entityAction.moveAction = new Api.MoveAction(nearestResource.position, true, true);
                 } else {
-                    entityAction.attackAction = new Api.AttackAction(nearestResource.id, null);
+                    entityAction.attackAction = new Api.AttackAction(nearestResource.id);
                 }
                 continue;
             }
@@ -159,7 +159,7 @@ public class Strategy {
                 if (distanceToEnemy > 1) {
                     entityAction.moveAction = new Api.MoveAction(nearestEnemy.position, true, true);
                 } else {
-                    entityAction.attackAction = new Api.AttackAction(nearestEnemy.id, null);
+                    entityAction.attackAction = new Api.AttackAction(nearestEnemy.id);
                 }
             }
         }

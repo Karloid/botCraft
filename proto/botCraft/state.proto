@@ -11,6 +11,9 @@ message State {
 
   int32 nextId = 4;
   uint32 tick = 5;
+  repeated AppliedAttack appliedAttacks = 6;
+  repeated AppliedRepair appliedRepairs = 7;
+  repeated AppliedBuild appliedBuilds = 8;
 }
 
 message Player {
@@ -31,5 +34,22 @@ message Entity {
   int32 health = 4;
   Point2D position = 5;
   bool active = 6;
+}
+
+message AppliedAttack {
+  int32 attackerId = 1;
+  int32 targetId = 2;
+  int32 damage = 3;
+}
+
+message AppliedRepair {
+  int32 repairerId = 1;
+  int32 targetId = 2;
+  int32 healthRestored = 3;
+}
+
+message AppliedBuild {
+  int32 builderId = 1;
+  int32 targetId = 2;
 }
 

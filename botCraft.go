@@ -181,6 +181,10 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 	pendingAttackActions := make([]*EntityIdPlusAction, 0)
 	pendingRepairActions := make([]*EntityIdPlusAction, 0)
 
+	appliedAttacks := make([]*pb.AppliedAttack, 0)
+	appliedRepairs := make([]*pb.AppliedRepair, 0)
+	appliedBuilds := make([]*pb.AppliedBuild, 0)
+
 	for _, action := range actions {
 		pbAction := action.Action.(*pb.Action)
 
@@ -228,7 +232,6 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 			5. Movement is executed in several steps. At each step, units attempt to move to the position found during the pathfinding stage.
 				If multiple units attempt to move to the same position, a random one is chosen. If no unit is able to move, the movement phase ends.
 			*/
-			// TODO proper concurrent order of actions
 			if entityAction.MoveAction != nil {
 				pendingMoveActions = append(pendingMoveActions, &entityIdPlusAction)
 			} else if entityAction.BuildAction != nil {
@@ -279,6 +282,10 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 			// TODO log error to player response
 			continue
 		}
+		if target.X == entity.Position.X && target.Y == entity.Position.Y {
+			// TODO log error to player response
+			continue
+		}
 		if !entitiesProperties[entity.EntityType].CanMove {
 			continue
 		}
@@ -286,7 +293,10 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 		breakThrough := entityIdPlusAction.EntityAction.MoveAction.BreakThrough
 		pathToTarget, closestToTarget := s.findPath(options, &entitiesSurface, entity, target, breakThrough)
 
-		if len(pathToTarget) < 1 && entityIdPlusAction.EntityAction.MoveAction.FindClosestPosition && closestToTarget != nil {
+		if len(pathToTarget) < 1 &&
+			entityIdPlusAction.EntityAction.MoveAction.FindClosestPosition &&
+			closestToTarget != nil &&
+			!closestToTarget.equals(target) {
 			// try to find closest position
 			pathToTarget, _ = s.findPath(options, &entitiesSurface, entity, closestToTarget.toPb(), breakThrough)
 			log.Println(
@@ -304,7 +314,7 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 
 		//TODO  check all new positions for all surface
 		entityWithOccupiedNextStep := entitiesSurface[*nextStep]
-		if entityWithOccupiedNextStep != nil && entityWithOccupiedNextStep.Id != entity.Id && entityWithOccupiedNextStep.PlayerId != entity.PlayerId {
+		if entityWithOccupiedNextStep != nil && entityWithOccupiedNextStep.Id != entity.Id && entityWithOccupiedNextStep.PlayerId != entity.PlayerId && breakThrough {
 			pendingAttackActions = append(pendingAttackActions, &EntityIdPlusAction{
 				EntityId: entity.Id,
 				EntityAction: &pb.EntityAction{
@@ -348,6 +358,12 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 				player := playersById[entity.PlayerId]
 				player.Resources += resources
 			}
+
+			appliedAttacks = append(appliedAttacks, &pb.AppliedAttack{
+				AttackerId: entity.Id,
+				TargetId:   target.Id,
+				Damage:     actualDamage,
+			})
 
 			// collect score
 			if actualDamage > 0 && target.Health <= 0 {
@@ -497,6 +513,11 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 		// add score
 		playersById[builder.PlayerId].Score += entitiesProperties[entityTypeToBuild].BuildScore
 
+		appliedBuilds = append(appliedBuilds, &pb.AppliedBuild{
+			BuilderId: builder.Id,
+			TargetId:  newEntity.Id,
+		})
+
 		log.Println(
 			"built entity=",
 			entityTypeToBuild.String(),
@@ -547,15 +568,23 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 		}
 
 		// repair
-		target.Health += repairerProp.RepairProperties.Power
-		if target.Health >= entitiesProperties[target.EntityType].MaxHealth {
-			target.Health = entitiesProperties[target.EntityType].MaxHealth
+		targetMaxHealth := entitiesProperties[target.EntityType].MaxHealth
+		maxRepair := targetMaxHealth - target.Health
+
+		actualRepair := minOf(repairerProp.RepairProperties.Power, maxRepair)
+		target.Health += actualRepair
+		if target.Health >= targetMaxHealth {
+			target.Health = targetMaxHealth
 			target.Active = true
 		}
+		appliedRepairs = append(appliedRepairs, &pb.AppliedRepair{
+			RepairerId:     repairer.Id,
+			TargetId:       target.Id,
+			HealthRestored: actualRepair,
+		})
+
 		log.Println("repaired entity=", target.EntityType.String(), "playerId=", repairer.PlayerId, "id=", target.Id, "newHealth=", target.Health)
 	}
-
-	// cannot repair dead units
 
 	// move
 	for entityId, pbNewPosition := range pendingMovePositions {
@@ -577,17 +606,10 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 
 		s.placeEntity(&entitiesSurface, &entitiesById, &entitiesProperties, entity)
 	}
+	state.AppliedBuilds = appliedBuilds
+	state.AppliedRepairs = appliedRepairs
+	state.AppliedAttacks = appliedAttacks
 
-	// final checks
-
-	/*	if hasWinner(state) {
-			return &manager.TickResult{
-				GameFinished: true,
-				Winner:       1 << 0,
-				NewState:     state,
-			}
-		}
-	*/
 	// TODO check if entities are all dead
 	if state.Tick >= options.MaxTickCount {
 		// find player with highest score and set it as winner
@@ -920,4 +942,8 @@ func (d GamePoint2D) toPb() *pb.Point2D {
 
 func (d GamePoint2D) distanceTo(target *pb.Point2D) int32 {
 	return abs(d.X-target.X) + abs(d.Y-target.Y)
+}
+
+func (d GamePoint2D) equals(target *pb.Point2D) bool {
+	return d.X == target.X && d.Y == target.Y
 }
