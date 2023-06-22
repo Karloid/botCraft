@@ -14,18 +14,6 @@ import (
 
 type BotCraft struct{}
 
-type Point2D struct {
-	X int32
-	Y int32
-}
-
-func (d Point2D) toPb() *pb.Point2D {
-	return &pb.Point2D{
-		X: d.X,
-		Y: d.Y,
-	}
-}
-
 func (s BotCraft) Init() (proto.Message, proto.Message, uint8) {
 	maxMapSize := int32(18)
 
@@ -50,7 +38,7 @@ func (s BotCraft) Init() (proto.Message, proto.Message, uint8) {
 	}
 
 	entitiesById := make(map[int32]*pb.Entity)
-	entitiesSurface := make(map[Point2D]*pb.Entity)
+	entitiesSurface := make(map[GamePoint2D]*pb.Entity)
 
 	nextId := int32(0)
 	nextId = s.generateResources(&entitiesById, nextId, maxMapSize, &entitiesSurface, &entityPropertiesByType)
@@ -77,10 +65,10 @@ func (s BotCraft) Init() (proto.Message, proto.Message, uint8) {
 	}, state, uint8((1 << 0) | (1 << 1))
 }
 
-func (s BotCraft) generateResources(entities *map[int32]*pb.Entity, nextId int32, mapSize int32, entitiesSurface *map[Point2D]*pb.Entity, entityProperties *map[pb.EntityType]*pb.EntityProperties) int32 {
-	resourcesToGenerate := (rand.Float32()*0.5 + 0.2) * float32(mapSize*mapSize)
+func (s BotCraft) generateResources(entities *map[int32]*pb.Entity, nextId int32, mapSize int32, entitiesSurface *map[GamePoint2D]*pb.Entity, entityProperties *map[pb.EntityType]*pb.EntityProperties) int32 {
+	resourcesToGenerate := /*(rand.Float32()*0.5 + 0.2) **/ float32(mapSize * mapSize)
 
-	existingResources := make(map[Point2D]bool)
+	existingResources := make(map[GamePoint2D]bool)
 
 	resourceSize := (*entityProperties)[pb.EntityType_RESOURCE].Size
 
@@ -88,7 +76,7 @@ func (s BotCraft) generateResources(entities *map[int32]*pb.Entity, nextId int32
 		x := rand.Int31n(mapSize)
 		y := rand.Int31n(mapSize)
 
-		pos := Point2D{X: x, Y: y}
+		pos := GamePoint2D{X: x, Y: y}
 		if existingResources[pos] {
 			i--
 			continue
@@ -119,20 +107,20 @@ func (s BotCraft) generateResources(entities *map[int32]*pb.Entity, nextId int32
 	return nextId
 }
 
-func (s BotCraft) putEntityToSurface(pos Point2D, resourceSize int32, entitiesSurface *map[Point2D]*pb.Entity, entityCandidate *pb.Entity) {
+func (s BotCraft) putEntityToSurface(pos GamePoint2D, resourceSize int32, entitiesSurface *map[GamePoint2D]*pb.Entity, entityCandidate *pb.Entity) {
 	for xx := pos.X; xx < pos.X+resourceSize; xx++ {
 		for yy := pos.Y; yy < pos.Y+resourceSize; yy++ {
-			(*entitiesSurface)[Point2D{X: xx, Y: yy}] = entityCandidate
+			(*entitiesSurface)[GamePoint2D{X: xx, Y: yy}] = entityCandidate
 		}
 	}
 }
 
-func (s BotCraft) checkIsPosFree(pos Point2D, entitySize int32, entitiesSurface *map[Point2D]*pb.Entity) bool {
+func (s BotCraft) checkIsPosFree(pos GamePoint2D, entitySize int32, entitiesSurface *map[GamePoint2D]*pb.Entity) bool {
 	isFree := true
 	// check pos for free
 	for xx := pos.X; xx < pos.X+entitySize; xx++ {
 		for yy := pos.Y; yy < pos.Y+entitySize; yy++ {
-			if (*entitiesSurface)[Point2D{X: xx, Y: yy}] != nil {
+			if (*entitiesSurface)[GamePoint2D{X: xx, Y: yy}] != nil {
 				isFree = false
 				break
 			}
@@ -178,7 +166,7 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 	state.Tick++
 
 	entitiesById := make(map[int32]*pb.Entity)
-	entitiesSurface := make(map[Point2D]*pb.Entity)
+	entitiesSurface := make(map[GamePoint2D]*pb.Entity)
 	for _, entity := range state.Entities {
 		entitiesById[entity.Id] = entity
 		s.placeEntity(&entitiesSurface, &entitiesById, &entitiesProperties, entity)
@@ -295,15 +283,24 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 			continue
 		}
 
-		pathToTarget := s.findPath(options, &entitiesSurface, &entitiesById, &entitiesProperties, entity, target)
-		// print path from entity to target
-		//log.Println("pathToTarget from=", entity.Position.X, entity.Position.Y, " to=", target.X, target.Y, "path=", pathToTarget)
+		breakThrough := entityIdPlusAction.EntityAction.MoveAction.BreakThrough
+		pathToTarget, closestToTarget := s.findPath(options, &entitiesSurface, entity, target, breakThrough)
+
+		if len(pathToTarget) < 1 && entityIdPlusAction.EntityAction.MoveAction.FindClosestPosition && closestToTarget != nil {
+			// try to find closest position
+			pathToTarget, _ = s.findPath(options, &entitiesSurface, entity, closestToTarget.toPb(), breakThrough)
+			log.Println(
+				"Fallback to closest position for entity", entity.Id, "from=",
+				entity.Position.X, entity.Position.Y, " to=", target.X, target.Y,
+				" pathLen=", len(pathToTarget),
+			)
+		}
 
 		if len(pathToTarget) < 1 {
 			log.Println("pathToTarget not found from=", entity.Position.X, entity.Position.Y, " to=", target.X, target.Y)
 			continue
 		}
-		var nextStep *Point2D = pathToTarget[1] // place occupied
+		var nextStep *GamePoint2D = pathToTarget[1] // place occupied
 
 		//TODO  check all new positions for all surface
 		entityWithOccupiedNextStep := entitiesSurface[*nextStep]
@@ -444,12 +441,12 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 		for x := positionToBuild.X; x < positionToBuild.X+buildSize; x++ {
 			for y := positionToBuild.Y; y < positionToBuild.Y+buildSize; y++ {
 				// check if in bounds
-				if !inBounds2(options, &Point2D{x, y}) {
+				if !inBounds2(options, &GamePoint2D{x, y}) {
 					spaceIsFree = false
 					break
 				}
 
-				if entitiesSurface[Point2D{x, y}] != nil {
+				if entitiesSurface[GamePoint2D{x, y}] != nil {
 					spaceIsFree = false
 					break
 				}
@@ -632,7 +629,7 @@ func distanceTo(entitiesProperties *map[pb.EntityType]*pb.EntityProperties, opti
 			// for all cells of build
 			for x2 := buildPos.X; x2 < buildPos.X+buildSize; x2++ {
 				for y2 := buildPos.Y; y2 < buildPos.Y+buildSize; y2++ {
-					distance = minOf(distance, distanceManh(&Point2D{x, y}, &Point2D{x2, y2}))
+					distance = minOf(distance, distanceManh(&GamePoint2D{x, y}, &GamePoint2D{x2, y2}))
 				}
 			}
 		}
@@ -649,7 +646,7 @@ func abs2(a int32) int32 {
 	}
 }
 
-func distanceManh(p *Point2D, p2 *Point2D) int32 {
+func distanceManh(p *GamePoint2D, p2 *GamePoint2D) int32 {
 	return abs2(p.X-p2.X) + abs2(p.Y-p2.Y)
 }
 
@@ -670,11 +667,11 @@ func minOf(a int32, b int32) int32 {
 	}
 }
 
-func point2DFromProto(position *pb.Point2D) Point2D {
-	return Point2D{X: position.X, Y: position.Y}
+func point2DFromProto(position *pb.Point2D) GamePoint2D {
+	return GamePoint2D{X: position.X, Y: position.Y}
 }
 
-func (s BotCraft) point2DtoProto(nextStep *Point2D) *pb.Point2D {
+func (s BotCraft) point2DtoProto(nextStep *GamePoint2D) *pb.Point2D {
 	return &pb.Point2D{X: nextStep.X, Y: nextStep.Y}
 }
 
@@ -725,7 +722,7 @@ func (s BotCraft) SmartGuyTurn(tickInfo *manager.TickInfo) proto.Message {
 	}
 }
 
-func (s BotCraft) generateBases(players []*pb.Player, entitiesById *map[int32]*pb.Entity, nextId int32, mapSize int32, entitiesSurface *map[Point2D]*pb.Entity, entityProperties *map[pb.EntityType]*pb.EntityProperties) int32 {
+func (s BotCraft) generateBases(players []*pb.Player, entitiesById *map[int32]*pb.Entity, nextId int32, mapSize int32, entitiesSurface *map[GamePoint2D]*pb.Entity, entityProperties *map[pb.EntityType]*pb.EntityProperties) int32 {
 
 	// TODO better base generation
 
@@ -735,7 +732,7 @@ func (s BotCraft) generateBases(players []*pb.Player, entitiesById *map[int32]*p
 			Id:         nextId,
 			PlayerId:   player.Id,
 			EntityType: pb.EntityType_BUILDER_BASE,
-			Position:   Point2D{X: 6, Y: int32(index) * (mapSize - 4)}.toPb(),
+			Position:   GamePoint2D{X: 6, Y: int32(index) * (mapSize - 4)}.toPb(),
 			Health:     100,
 			Active:     true,
 		})
@@ -748,10 +745,23 @@ func (s BotCraft) generateBases(players []*pb.Player, entitiesById *map[int32]*p
 				Id:         nextId,
 				PlayerId:   player.Id,
 				EntityType: pb.EntityType_BUILDER_UNIT,
-				Position:   Point2D{X: 11, Y: int32(index)*(mapSize-4) + int32(i)}.toPb(),
-				Health:     10,
+				Position:   GamePoint2D{X: 11, Y: int32(index)*(mapSize-4) + int32(i)}.toPb(),
+				Health:     (*entityProperties)[pb.EntityType_BUILDER_UNIT].MaxHealth,
 				Active:     true,
 			})
+
+			if i == 0 {
+				nextId++
+				// place melee
+				s.placeEntity(entitiesSurface, entitiesById, entityProperties, &pb.Entity{
+					Id:         nextId,
+					PlayerId:   player.Id,
+					EntityType: pb.EntityType_MELEE_UNIT,
+					Position:   GamePoint2D{X: 11 + 1, Y: int32(index)*(mapSize-4) + int32(i)}.toPb(),
+					Health:     (*entityProperties)[pb.EntityType_MELEE_UNIT].MaxHealth,
+					Active:     true,
+				})
+			}
 
 			nextId++
 		}
@@ -760,7 +770,7 @@ func (s BotCraft) generateBases(players []*pb.Player, entitiesById *map[int32]*p
 }
 
 func (s BotCraft) placeEntity(
-	entitiesSurface *map[Point2D]*pb.Entity,
+	entitiesSurface *map[GamePoint2D]*pb.Entity,
 	entitiesById *map[int32]*pb.Entity,
 	entityProperties *map[pb.EntityType]*pb.EntityProperties,
 	entity *pb.Entity,
@@ -768,12 +778,12 @@ func (s BotCraft) placeEntity(
 	(*entitiesById)[entity.Id] = entity
 	entitySize := (*entityProperties)[entity.EntityType].Size
 
-	entityPosition := Point2D{X: entity.Position.X, Y: entity.Position.Y}
+	entityPosition := GamePoint2D{X: entity.Position.X, Y: entity.Position.Y}
 
 	for x := entityPosition.X; x < entityPosition.X+entitySize; x++ {
 		for y := entityPosition.Y; y < entityPosition.Y+entitySize; y++ {
 			// remove existing entities
-			posToPlace := Point2D{X: x, Y: y}
+			posToPlace := GamePoint2D{X: x, Y: y}
 			existing, ok := (*entitiesSurface)[posToPlace]
 			if ok {
 				s.removeEntity(entitiesById, entitiesSurface, entityProperties, existing)
@@ -786,7 +796,7 @@ func (s BotCraft) placeEntity(
 
 func (s BotCraft) removeEntity(
 	entitiesById *map[int32]*pb.Entity,
-	entitiesSurface *map[Point2D]*pb.Entity,
+	entitiesSurface *map[GamePoint2D]*pb.Entity,
 	entityProperties *map[pb.EntityType]*pb.EntityProperties,
 	entity *pb.Entity,
 ) {
@@ -795,24 +805,23 @@ func (s BotCraft) removeEntity(
 	existingSize := (*entityProperties)[entity.EntityType].Size
 	for x2 := entity.Position.X; x2 < entity.Position.X+existingSize; x2++ {
 		for y2 := entity.Position.Y; y2 < entity.Position.Y+existingSize; y2++ {
-			delete(*entitiesSurface, Point2D{X: x2, Y: y2})
+			delete(*entitiesSurface, GamePoint2D{X: x2, Y: y2})
 		}
 	}
 }
 
 func (s BotCraft) findPath(
 	options *pb.Options,
-	entitiesSurface *map[Point2D]*pb.Entity,
-	entitiesById *map[int32]*pb.Entity,
-	entityProperties *map[pb.EntityType]*pb.EntityProperties,
+	entitiesSurface *map[GamePoint2D]*pb.Entity,
 	fromEntity *pb.Entity,
 	target *pb.Point2D,
-) []*Point2D {
+	breakThrough bool,
+) ([]*GamePoint2D, *GamePoint2D) {
 	// bfs to find path
 
 	// Define a struct to represent each node in the graph
 	type node struct {
-		point          Point2D
+		point          GamePoint2D
 		parent         *node
 		distanceToRoot int
 	}
@@ -821,10 +830,12 @@ func (s BotCraft) findPath(
 	queue := []*node{{point: point2DFromProto(fromEntity.Position), distanceToRoot: 0}}
 
 	// Create a set to hold the nodes that we've already explored
-	exploredNodes := make(map[Point2D]bool)
+	exploredNodes := make(map[GamePoint2D]bool)
+
+	var closestToTarget *GamePoint2D = nil
 
 	// Define a function to check if a point is a valid next step in the path
-	isStepValid := func(pt Point2D) bool {
+	isStepValid := func(pt GamePoint2D) bool {
 		// The target is always a valid step
 		if (pt.X == target.X) && (pt.Y == target.Y) {
 			return true
@@ -834,10 +845,10 @@ func (s BotCraft) findPath(
 			if ent == fromEntity {
 				return true // Ignore the entity itself as an obstacle
 			}
-			props := (*entityProperties)[ent.GetEntityType()]
-			if !props.GetCanMove() || !ent.GetActive() {
-				return false // Entities that can't move or aren't active are obstacles
+			if breakThrough && ent.PlayerId != fromEntity.PlayerId {
+				return true
 			}
+			return false
 		}
 		return true
 	}
@@ -849,16 +860,16 @@ func (s BotCraft) findPath(
 
 		// Check if this node is the target, and if so, return the path
 		if currNode.point.X == target.X && currNode.point.Y == target.Y {
-			path := []*Point2D{&currNode.point}
+			path := []*GamePoint2D{&currNode.point}
 			for currNode.parent != nil {
 				currNode = currNode.parent
-				path = append([]*Point2D{&currNode.point}, path...)
+				path = append([]*GamePoint2D{&currNode.point}, path...)
 			}
-			return path
+			return path, closestToTarget
 		}
 
 		// Explore the four adjacent points
-		for _, adjPt := range []Point2D{
+		for _, adjPt := range []GamePoint2D{
 			{currNode.point.X + 1, currNode.point.Y},
 			{currNode.point.X - 1, currNode.point.Y},
 			{currNode.point.X, currNode.point.Y + 1},
@@ -884,8 +895,29 @@ func (s BotCraft) findPath(
 
 			// Mark the point as explored
 			exploredNodes[adjPt] = true
+
+			// Check if this is the closest point to the target
+			if closestToTarget == nil || nextNode.point.distanceTo(target) < closestToTarget.distanceTo(target) {
+				closestToTarget = &nextNode.point
+			}
 		}
 	}
 
-	return nil // No path to the target was found
+	return nil, closestToTarget // No path to the target was found
+}
+
+type GamePoint2D struct {
+	X int32
+	Y int32
+}
+
+func (d GamePoint2D) toPb() *pb.Point2D {
+	return &pb.Point2D{
+		X: d.X,
+		Y: d.Y,
+	}
+}
+
+func (d GamePoint2D) distanceTo(target *pb.Point2D) int32 {
+	return abs(d.X-target.X) + abs(d.Y-target.Y)
 }

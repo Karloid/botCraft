@@ -102,11 +102,9 @@ public class Strategy {
                 entityIdsToIgnore.add(myBuilder.id);
                 entityIdsToIgnore.add(nearestResource.id);
 
-
                 int distanceToResource = distanceToEntity(gameOptions, myBuilder, "RESOURCE", nearestResource.position);
 
-
-                System.out.println("distance to resource=" + distanceToResource + " from " + myBuilder.position + " to " + nearestResource.position);
+                //System.out.println("distance to resource=" + distanceToResource + " from " + myBuilder.position + " to " + nearestResource.position);
                 if (distanceToResource > 1) {
                     // move to resource
                     entityAction.moveAction = new Api.MoveAction(nearestResource.position, true, true);
@@ -164,9 +162,7 @@ public class Strategy {
                     entityAction.attackAction = new Api.AttackAction(nearestEnemy.id, null);
                 }
             }
-
         }
-
 
         return resultAction;
     }

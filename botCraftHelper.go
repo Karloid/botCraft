@@ -8,7 +8,7 @@ func inBounds(options *pb.Options, target *pb.Point2D) bool {
 	return target.X >= 0 && target.X < options.MapSize && target.Y >= 0 && target.Y < options.MapSize
 }
 
-func inBounds2(options *pb.Options, target *Point2D) bool {
+func inBounds2(options *pb.Options, target *GamePoint2D) bool {
 	return target.X >= 0 && target.X < options.MapSize && target.Y >= 0 && target.Y < options.MapSize
 }
 
