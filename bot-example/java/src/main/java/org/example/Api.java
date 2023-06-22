@@ -12,6 +12,8 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
+import static java.util.concurrent.TimeUnit.*;
+
 public class Api {
     private final String baseUrl;
     private final OkHttpClient client;
@@ -20,7 +22,7 @@ public class Api {
     public Api(String baseUrl) {
         this.baseUrl = baseUrl;
         this.client = new OkHttpClient.Builder()
-                .readTimeout(60000, java.util.concurrent.TimeUnit.MILLISECONDS)
+                .readTimeout(60000, MILLISECONDS)
                 .build();
         this.gson = new Gson();
     }
