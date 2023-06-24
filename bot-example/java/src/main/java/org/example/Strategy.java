@@ -326,7 +326,7 @@ public class Strategy {
             case "RESOURCE":
                 return "^";
             default:
-                return "?";
+                return foundEntity.entityType.substring(0, 1);
         }
     }
 }

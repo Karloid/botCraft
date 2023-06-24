@@ -14,6 +14,7 @@ import (
 
 type BotCraft struct{}
 
+// TODO DELETEME implement proper map generation
 func (s BotCraft) Init() (proto.Message, proto.Message, uint8) {
 	maxMapSize := int32(18)
 
@@ -308,6 +309,10 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 
 		if len(pathToTarget) < 1 {
 			log.Println("pathToTarget not found from=", entity.Position.X, entity.Position.Y, " to=", target.X, target.Y)
+			continue
+		}
+		if len(pathToTarget) == 1 {
+			// already at target, ignore
 			continue
 		}
 		var nextStep *GamePoint2D = pathToTarget[1] // place occupied
@@ -746,46 +751,74 @@ func (s BotCraft) SmartGuyTurn(tickInfo *manager.TickInfo) proto.Message {
 
 func (s BotCraft) generateBases(players []*pb.Player, entitiesById *map[int32]*pb.Entity, nextId int32, mapSize int32, entitiesSurface *map[GamePoint2D]*pb.Entity, entityProperties *map[pb.EntityType]*pb.EntityProperties) int32 {
 
-	// TODO better base generation
+	// TODO support generation for more than two players
 
 	for index, player := range players {
 
-		s.placeEntity(entitiesSurface, entitiesById, entityProperties, &pb.Entity{
-			Id:         nextId,
-			PlayerId:   player.Id,
-			EntityType: pb.EntityType_BUILDER_BASE,
-			Position:   GamePoint2D{X: 6, Y: int32(index) * (mapSize - 4)}.toPb(),
-			Health:     100,
-			Active:     true,
-		})
-		nextId++
+		if index == 0 {
 
-		// generate couple of builders
-		for i := 0; i < 2; i++ {
+			s.placeEntity(entitiesSurface, entitiesById, entityProperties, &pb.Entity{
+				Id:         nextId,
+				PlayerId:   player.Id,
+				EntityType: pb.EntityType_BUILDER_BASE,
+				Position:   GamePoint2D{X: 1, Y: 1}.toPb(),
+				Health:     100,
+				Active:     true,
+			})
+			nextId++
+
+			// generate couple of builders
+			s.placeEntity(entitiesSurface, entitiesById, entityProperties, &pb.Entity{
+				Id:         nextId,
+				PlayerId:   player.Id,
+				EntityType: pb.EntityType_BUILDER_UNIT,
+				Position:   GamePoint2D{X: 6, Y: 5}.toPb(),
+				Health:     (*entityProperties)[pb.EntityType_BUILDER_UNIT].MaxHealth,
+				Active:     true,
+			})
+			nextId++
 
 			s.placeEntity(entitiesSurface, entitiesById, entityProperties, &pb.Entity{
 				Id:         nextId,
 				PlayerId:   player.Id,
 				EntityType: pb.EntityType_BUILDER_UNIT,
-				Position:   GamePoint2D{X: 11, Y: int32(index)*(mapSize-4) + int32(i)}.toPb(),
+				Position:   GamePoint2D{X: 5, Y: 6}.toPb(),
 				Health:     (*entityProperties)[pb.EntityType_BUILDER_UNIT].MaxHealth,
 				Active:     true,
 			})
+			nextId++
 
-			if i == 0 {
-				nextId++
-				// place melee
+			s.placeEntity(entitiesSurface, entitiesById, entityProperties, &pb.Entity{
+				Id:         nextId,
+				PlayerId:   player.Id,
+				EntityType: pb.EntityType_TURRET,
+				Position:   GamePoint2D{X: 5, Y: 5}.toPb(),
+				Health:     (*entityProperties)[pb.EntityType_TURRET].MaxHealth,
+				Active:     true,
+			})
+			nextId++
+		} else {
+			// mirror to the other side
+			entitiesOfFirstPlayer := make([]*pb.Entity, 0)
+			for _, entity := range *entitiesById {
+				if entity.PlayerId == players[0].Id {
+					entitiesOfFirstPlayer = append(entitiesOfFirstPlayer, entity)
+				}
+			}
+
+			for _, entity := range entitiesOfFirstPlayer {
+				entitySize := (*entityProperties)[entity.EntityType].Size
 				s.placeEntity(entitiesSurface, entitiesById, entityProperties, &pb.Entity{
 					Id:         nextId,
 					PlayerId:   player.Id,
-					EntityType: pb.EntityType_MELEE_UNIT,
-					Position:   GamePoint2D{X: 11 + 1, Y: int32(index)*(mapSize-4) + int32(i)}.toPb(),
-					Health:     (*entityProperties)[pb.EntityType_MELEE_UNIT].MaxHealth,
-					Active:     true,
+					EntityType: entity.EntityType,
+					Position:   GamePoint2D{X: mapSize - 1 - entity.Position.X - entitySize, Y: mapSize - 1 - entity.Position.Y - entitySize}.toPb(),
+					Health:     entity.Health,
+					Active:     entity.Active,
 				})
+				nextId++
 			}
 
-			nextId++
 		}
 	}
 	return nextId
