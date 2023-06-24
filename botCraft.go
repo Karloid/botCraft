@@ -17,7 +17,7 @@ type BotCraft struct{}
 
 // TODO DELETEME implement proper map generation
 func (s BotCraft) Init() (proto.Message, proto.Message, uint8) {
-	maxMapSize := int32(18)
+	maxMapSize := int32(32)
 
 	players := make([]*pb.Player, 0)
 
@@ -68,45 +68,45 @@ func (s BotCraft) Init() (proto.Message, proto.Message, uint8) {
 }
 
 func (s BotCraft) generateResources(entitiesById *map[int32]*pb.Entity, nextId int32, mapSize int32, entitiesSurface *map[GamePoint2D]*pb.Entity, entityProperties *map[pb.EntityType]*pb.EntityProperties) int32 {
-	resourcesToGenerate := (rand.Float32()*0.5 + 0.2) * float32(mapSize*mapSize/2)
 
 	existingResources := make(map[GamePoint2D]bool)
 
 	resourceSize := (*entityProperties)[pb.EntityType_RESOURCE].Size
 
-	for i := 0; i < int(resourcesToGenerate); i++ {
-		x := rand.Int31n(mapSize)
-		y := rand.Int31n(mapSize)
+	forestMap := make(map[GamePoint2D]bool)
+	forestMap = generateForestMap(mapSize, forestMap)
 
-		pos := GamePoint2D{X: x, Y: y}
-		if existingResources[pos] {
-			i--
-			continue
-		}
+	// go through all cells
+	for x := int32(0); x < mapSize; x++ {
+		for y := int32(0); y < mapSize; y++ {
 
-		if pos.distanceManh(GamePoint2D{X: 0, Y: 0}) > mapSize {
-			i--
-			continue
-		}
+			pos := GamePoint2D{X: x, Y: y}
 
-		existingResources[pos] = true
+			if pos.distanceManh(GamePoint2D{X: 0, Y: 0}) > mapSize {
+				continue
+			}
 
-		entityCandidate := &pb.Entity{
-			Id:         nextId,
-			PlayerId:   -1,
-			EntityType: pb.EntityType_RESOURCE,
-			Position:   pos.toPb(),
-			Health:     30,
-			Active:     true,
-		}
+			// check forest map exists and true
+			if !forestMap[pos] {
+				continue
+			}
 
-		isFree := s.checkIsPosFree(pos, resourceSize, entitiesSurface)
+			existingResources[pos] = true
 
-		if isFree {
+			entityCandidate := &pb.Entity{
+				Id:         nextId,
+				PlayerId:   -1,
+				EntityType: pb.EntityType_RESOURCE,
+				Position:   pos.toPb(),
+				Health:     30,
+				Active:     true,
+			}
+
 			s.putEntityToSurface(pos, resourceSize, entitiesSurface, entityCandidate)
 			(*entitiesById)[entityCandidate.Id] = entityCandidate
 
 			nextId++
+
 		}
 	}
 
@@ -116,7 +116,7 @@ func (s BotCraft) generateResources(entitiesById *map[int32]*pb.Entity, nextId i
 		isFree := s.checkIsPosFree(mirroredPos, resourceSize, entitiesSurface)
 
 		if isFree {
-			log.Println("mirroring resource", pos, "->", mirroredPos)
+			//log.Println("mirroring resource", pos, "->", mirroredPos)
 			entityCandidate := &pb.Entity{
 				Id:         nextId,
 				PlayerId:   -1,
@@ -134,10 +134,128 @@ func (s BotCraft) generateResources(entitiesById *map[int32]*pb.Entity, nextId i
 	return nextId
 }
 
+type GradientPoint struct {
+	Pos         GamePoint2D
+	FirstLevel  int32
+	SecondLevel int32
+}
+
+func generateForestMap(mapSize int32, forestMap map[GamePoint2D]bool) map[GamePoint2D]bool {
+	//totalCount := mapSize * mapSize / 2
+
+	// fill whole map
+	pointsOfPlain := make([]GradientPoint, 0)
+
+	pointsOfPlain = append(pointsOfPlain, GradientPoint{Pos: GamePoint2D{X: 0, Y: 0}, FirstLevel: 4 + rand.Int31n(2), SecondLevel: mapSize})
+
+	amountOfRandomPoints := int32(2) + int32(rand.Float32()*3)
+	for i := int32(0); i < amountOfRandomPoints; i++ {
+		firstLevel := rand.Int31n(4)
+		pointsOfPlain = append(pointsOfPlain, GradientPoint{
+			Pos:         GamePoint2D{X: rand.Int31n(mapSize), Y: rand.Int31n(mapSize)},
+			FirstLevel:  firstLevel,
+			SecondLevel: firstLevel + rand.Int31n(mapSize),
+		})
+	}
+
+	for x := int32(0); x < mapSize; x++ {
+		for y := int32(0); y < mapSize; y++ {
+			forestPos := GamePoint2D{X: x, Y: y}
+			result := true
+
+			prob := getMinimumProb(pointsOfPlain, forestPos)
+			result = rand.Float32() < prob
+
+			forestMap[forestPos] = result
+		}
+	}
+
+	// print forest map
+	for x := int32(0); x < mapSize; x++ {
+		for y := int32(0); y < mapSize; y++ {
+			forestPos := GamePoint2D{X: x, Y: y}
+			if forestMap[forestPos] {
+				fmt.Print("X")
+			} else {
+				fmt.Print(".")
+			}
+		}
+		fmt.Println()
+	}
+
+	fmt.Println()
+
+	// fill empty spaces with forest if 3 or more neighbours are forest
+	for x := int32(0); x < mapSize; x++ {
+		for y := int32(0); y < mapSize; y++ {
+			forestPos := GamePoint2D{X: x, Y: y}
+			if !forestMap[forestPos] {
+				neighboursCount := 0
+				// calculate neighboursCount without calling a extra function
+				if x > 0 && forestMap[GamePoint2D{X: x - 1, Y: y}] {
+					neighboursCount++
+				}
+				if x < mapSize-1 && forestMap[GamePoint2D{X: x + 1, Y: y}] {
+					neighboursCount++
+				}
+				if y > 0 && forestMap[GamePoint2D{X: x, Y: y - 1}] {
+					neighboursCount++
+				}
+				if y < mapSize-1 && forestMap[GamePoint2D{X: x, Y: y + 1}] {
+					neighboursCount++
+				}
+
+				if neighboursCount >= 3 {
+					forestMap[forestPos] = 0.75 > rand.Float32()
+				}
+			}
+		}
+	}
+
+	// print forest map
+	for x := int32(0); x < mapSize; x++ {
+		for y := int32(0); y < mapSize; y++ {
+			forestPos := GamePoint2D{X: x, Y: y}
+			if forestMap[forestPos] {
+				fmt.Print("X")
+			} else {
+				fmt.Print(".")
+			}
+		}
+		fmt.Println()
+	}
+
+	return forestMap
+}
+
+func getMinimumProb(pointsOfPlain []GradientPoint, forestPos GamePoint2D) float32 {
+
+	// find minimum prob acrolss all pointsOfPlain
+	minProb := float32(1.0)
+	for _, gradientPoint := range pointsOfPlain {
+		distance := gradientPoint.Pos.distanceManh(forestPos)
+
+		prob := float32(1.0)
+		if distance < gradientPoint.FirstLevel { // first level
+			prob = 0.05
+		} else if distance < gradientPoint.SecondLevel { // second level
+			prob = float32(distance-gradientPoint.FirstLevel) / float32(gradientPoint.SecondLevel-gradientPoint.FirstLevel)
+		} else { // third level
+			prob = 0.95
+		}
+
+		if prob < minProb {
+			minProb = prob
+		}
+	}
+
+	return minProb
+}
+
 func (s BotCraft) putEntityToSurface(pos GamePoint2D, resourceSize int32, entitiesSurface *map[GamePoint2D]*pb.Entity, entityCandidate *pb.Entity) {
 	for xx := pos.X; xx < pos.X+resourceSize; xx++ {
 		for yy := pos.Y; yy < pos.Y+resourceSize; yy++ {
-			log.Println("putting resource", pos, "->", xx, yy)
+			//log.Println("putting resource", pos, "->", xx, yy)
 			posToPlace := GamePoint2D{X: xx, Y: yy}
 			(*entitiesSurface)[posToPlace] = entityCandidate
 		}
@@ -993,28 +1111,4 @@ func (s BotCraft) findPath(
 	}
 
 	return nil, closestToTarget // No path to the target was found
-}
-
-type GamePoint2D struct {
-	X int32
-	Y int32
-}
-
-func (d GamePoint2D) toPb() *pb.Point2D {
-	return &pb.Point2D{
-		X: d.X,
-		Y: d.Y,
-	}
-}
-
-func (d GamePoint2D) distanceTo(target *pb.Point2D) int32 {
-	return abs(d.X-target.X) + abs(d.Y-target.Y)
-}
-
-func (d GamePoint2D) equals(target *pb.Point2D) bool {
-	return d.X == target.X && d.Y == target.Y
-}
-
-func (d GamePoint2D) distanceManh(d2 GamePoint2D) int32 {
-	return abs(d.X-d2.X) + abs(d.Y-d2.Y)
 }
