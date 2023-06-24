@@ -3,10 +3,9 @@ package wait_turn
 import (
 	"context"
 	"errors"
+	"github.com/go-qbit/rpc"
 	"github.com/karloid/botCraft/pb"
 	"log"
-
-	"github.com/go-qbit/rpc"
 
 	manager "github.com/bot-games/game-manager"
 )

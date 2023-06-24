@@ -2,6 +2,7 @@
 package botCraft
 
 import (
+	"fmt"
 	"github.com/karloid/botCraft/pb"
 	"log"
 	"math"
@@ -66,8 +67,8 @@ func (s BotCraft) Init() (proto.Message, proto.Message, uint8) {
 	}, state, uint8((1 << 0) | (1 << 1))
 }
 
-func (s BotCraft) generateResources(entities *map[int32]*pb.Entity, nextId int32, mapSize int32, entitiesSurface *map[GamePoint2D]*pb.Entity, entityProperties *map[pb.EntityType]*pb.EntityProperties) int32 {
-	resourcesToGenerate := /*(rand.Float32()*0.5 + 0.2) **/ float32(mapSize * mapSize)
+func (s BotCraft) generateResources(entitiesById *map[int32]*pb.Entity, nextId int32, mapSize int32, entitiesSurface *map[GamePoint2D]*pb.Entity, entityProperties *map[pb.EntityType]*pb.EntityProperties) int32 {
+	resourcesToGenerate := (rand.Float32()*0.5 + 0.2) * float32(mapSize*mapSize/2)
 
 	existingResources := make(map[GamePoint2D]bool)
 
@@ -79,6 +80,11 @@ func (s BotCraft) generateResources(entities *map[int32]*pb.Entity, nextId int32
 
 		pos := GamePoint2D{X: x, Y: y}
 		if existingResources[pos] {
+			i--
+			continue
+		}
+
+		if pos.distanceManh(GamePoint2D{X: 0, Y: 0}) > mapSize {
 			i--
 			continue
 		}
@@ -97,10 +103,30 @@ func (s BotCraft) generateResources(entities *map[int32]*pb.Entity, nextId int32
 		isFree := s.checkIsPosFree(pos, resourceSize, entitiesSurface)
 
 		if isFree {
-			(*entities)[nextId] = entityCandidate
-
 			s.putEntityToSurface(pos, resourceSize, entitiesSurface, entityCandidate)
+			(*entitiesById)[entityCandidate.Id] = entityCandidate
 
+			nextId++
+		}
+	}
+
+	// mirror existingResources
+	for pos, _ := range existingResources {
+		mirroredPos := GamePoint2D{X: mapSize - pos.X - resourceSize, Y: mapSize - pos.Y - resourceSize}
+		isFree := s.checkIsPosFree(mirroredPos, resourceSize, entitiesSurface)
+
+		if isFree {
+			log.Println("mirroring resource", pos, "->", mirroredPos)
+			entityCandidate := &pb.Entity{
+				Id:         nextId,
+				PlayerId:   -1,
+				EntityType: pb.EntityType_RESOURCE,
+				Position:   mirroredPos.toPb(),
+				Health:     30,
+				Active:     true,
+			}
+			s.putEntityToSurface(mirroredPos, resourceSize, entitiesSurface, entityCandidate)
+			(*entitiesById)[entityCandidate.Id] = entityCandidate
 			nextId++
 		}
 	}
@@ -111,7 +137,9 @@ func (s BotCraft) generateResources(entities *map[int32]*pb.Entity, nextId int32
 func (s BotCraft) putEntityToSurface(pos GamePoint2D, resourceSize int32, entitiesSurface *map[GamePoint2D]*pb.Entity, entityCandidate *pb.Entity) {
 	for xx := pos.X; xx < pos.X+resourceSize; xx++ {
 		for yy := pos.Y; yy < pos.Y+resourceSize; yy++ {
-			(*entitiesSurface)[GamePoint2D{X: xx, Y: yy}] = entityCandidate
+			log.Println("putting resource", pos, "->", xx, yy)
+			posToPlace := GamePoint2D{X: xx, Y: yy}
+			(*entitiesSurface)[posToPlace] = entityCandidate
 		}
 	}
 }
@@ -772,7 +800,7 @@ func (s BotCraft) generateBases(players []*pb.Player, entitiesById *map[int32]*p
 				Id:         nextId,
 				PlayerId:   player.Id,
 				EntityType: pb.EntityType_BUILDER_UNIT,
-				Position:   GamePoint2D{X: 6, Y: 5}.toPb(),
+				Position:   GamePoint2D{X: 5, Y: 4}.toPb(),
 				Health:     (*entityProperties)[pb.EntityType_BUILDER_UNIT].MaxHealth,
 				Active:     true,
 			})
@@ -782,7 +810,7 @@ func (s BotCraft) generateBases(players []*pb.Player, entitiesById *map[int32]*p
 				Id:         nextId,
 				PlayerId:   player.Id,
 				EntityType: pb.EntityType_BUILDER_UNIT,
-				Position:   GamePoint2D{X: 5, Y: 6}.toPb(),
+				Position:   GamePoint2D{X: 4, Y: 5}.toPb(),
 				Health:     (*entityProperties)[pb.EntityType_BUILDER_UNIT].MaxHealth,
 				Active:     true,
 			})
@@ -812,7 +840,7 @@ func (s BotCraft) generateBases(players []*pb.Player, entitiesById *map[int32]*p
 					Id:         nextId,
 					PlayerId:   player.Id,
 					EntityType: entity.EntityType,
-					Position:   GamePoint2D{X: mapSize - 1 - entity.Position.X - entitySize, Y: mapSize - 1 - entity.Position.Y - entitySize}.toPb(),
+					Position:   GamePoint2D{X: mapSize - entity.Position.X - entitySize, Y: mapSize - entity.Position.Y - entitySize}.toPb(),
 					Health:     entity.Health,
 					Active:     entity.Active,
 				})
@@ -841,23 +869,29 @@ func (s BotCraft) placeEntity(
 			posToPlace := GamePoint2D{X: x, Y: y}
 			existing, ok := (*entitiesSurface)[posToPlace]
 			if ok {
+				log.Println("removing existing entity new=", entity.Position, " existing=", existing.Position, " type=", existing.EntityType)
 				s.removeEntity(entitiesById, entitiesSurface, entityProperties, existing)
 			}
-
 			(*entitiesSurface)[posToPlace] = entity
 		}
 	}
+
+}
+
+// string method for GamePoint2D
+func (p GamePoint2D) String() string {
+	return fmt.Sprintf("(%d,%d)", p.X, p.Y)
 }
 
 func (s BotCraft) removeEntity(
 	entitiesById *map[int32]*pb.Entity,
 	entitiesSurface *map[GamePoint2D]*pb.Entity,
-	entityProperties *map[pb.EntityType]*pb.EntityProperties,
+	entitiesProperties *map[pb.EntityType]*pb.EntityProperties,
 	entity *pb.Entity,
 ) {
 	delete(*entitiesById, entity.Id)
 
-	existingSize := (*entityProperties)[entity.EntityType].Size
+	existingSize := (*entitiesProperties)[entity.EntityType].Size
 	for x2 := entity.Position.X; x2 < entity.Position.X+existingSize; x2++ {
 		for y2 := entity.Position.Y; y2 < entity.Position.Y+existingSize; y2++ {
 			delete(*entitiesSurface, GamePoint2D{X: x2, Y: y2})
@@ -979,4 +1013,8 @@ func (d GamePoint2D) distanceTo(target *pb.Point2D) int32 {
 
 func (d GamePoint2D) equals(target *pb.Point2D) bool {
 	return d.X == target.X && d.Y == target.Y
+}
+
+func (d GamePoint2D) distanceManh(d2 GamePoint2D) int32 {
+	return abs(d.X-d2.X) + abs(d.Y-d2.Y)
 }
