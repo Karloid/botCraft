@@ -2,6 +2,96 @@ import * as $protobuf from "protobufjs";
 /** Namespace botCraft. */
 export namespace botCraft {
 
+    /** Properties of an Int32Value. */
+    interface IInt32Value {
+
+        /** Int32Value value */
+        value?: (number|null);
+    }
+
+    /** Represents an Int32Value. */
+    class Int32Value implements IInt32Value {
+
+        /**
+         * Constructs a new Int32Value.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: botCraft.IInt32Value);
+
+        /** Int32Value value. */
+        public value: number;
+
+        /**
+         * Creates a new Int32Value instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns Int32Value instance
+         */
+        public static create(properties?: botCraft.IInt32Value): botCraft.Int32Value;
+
+        /**
+         * Encodes the specified Int32Value message. Does not implicitly {@link botCraft.Int32Value.verify|verify} messages.
+         * @param message Int32Value message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: botCraft.IInt32Value, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified Int32Value message, length delimited. Does not implicitly {@link botCraft.Int32Value.verify|verify} messages.
+         * @param message Int32Value message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: botCraft.IInt32Value, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an Int32Value message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns Int32Value
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): botCraft.Int32Value;
+
+        /**
+         * Decodes an Int32Value message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns Int32Value
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): botCraft.Int32Value;
+
+        /**
+         * Verifies an Int32Value message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an Int32Value message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns Int32Value
+         */
+        public static fromObject(object: { [k: string]: any }): botCraft.Int32Value;
+
+        /**
+         * Creates a plain object from an Int32Value message. Also converts values to other types if specified.
+         * @param message Int32Value
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: botCraft.Int32Value, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this Int32Value to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+    }
+
     /** Properties of an Action. */
     interface IAction {
 
@@ -401,8 +491,8 @@ export namespace botCraft {
     /** Properties of an AttackAction. */
     interface IAttackAction {
 
-        /** AttackAction target */
-        target?: (number|null);
+        /** AttackAction targetId */
+        targetId?: (botCraft.IInt32Value|null);
 
         /** AttackAction autoAttack */
         autoAttack?: (botCraft.IAutoAttack|null);
@@ -417,8 +507,8 @@ export namespace botCraft {
          */
         constructor(properties?: botCraft.IAttackAction);
 
-        /** AttackAction target. */
-        public target: number;
+        /** AttackAction targetId. */
+        public targetId?: (botCraft.IInt32Value|null);
 
         /** AttackAction autoAttack. */
         public autoAttack?: (botCraft.IAutoAttack|null);
@@ -675,6 +765,96 @@ export namespace botCraft {
 
         /**
          * Converts this RepairAction to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+    }
+
+    /** Properties of an Int32Value2. */
+    interface IInt32Value2 {
+
+        /** Int32Value2 value */
+        value?: (number|null);
+    }
+
+    /** Represents an Int32Value2. */
+    class Int32Value2 implements IInt32Value2 {
+
+        /**
+         * Constructs a new Int32Value2.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: botCraft.IInt32Value2);
+
+        /** Int32Value2 value. */
+        public value: number;
+
+        /**
+         * Creates a new Int32Value2 instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns Int32Value2 instance
+         */
+        public static create(properties?: botCraft.IInt32Value2): botCraft.Int32Value2;
+
+        /**
+         * Encodes the specified Int32Value2 message. Does not implicitly {@link botCraft.Int32Value2.verify|verify} messages.
+         * @param message Int32Value2 message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: botCraft.IInt32Value2, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified Int32Value2 message, length delimited. Does not implicitly {@link botCraft.Int32Value2.verify|verify} messages.
+         * @param message Int32Value2 message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: botCraft.IInt32Value2, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an Int32Value2 message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns Int32Value2
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): botCraft.Int32Value2;
+
+        /**
+         * Decodes an Int32Value2 message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns Int32Value2
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): botCraft.Int32Value2;
+
+        /**
+         * Verifies an Int32Value2 message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an Int32Value2 message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns Int32Value2
+         */
+        public static fromObject(object: { [k: string]: any }): botCraft.Int32Value2;
+
+        /**
+         * Creates a plain object from an Int32Value2 message. Also converts values to other types if specified.
+         * @param message Int32Value2
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: botCraft.Int32Value2, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this Int32Value2 to JSON.
          * @returns JSON object
          */
         public toJSON(): { [k: string]: any };
@@ -977,7 +1157,7 @@ export namespace botCraft {
         options?: (botCraft.EntityType[]|null);
 
         /** BuildProperties initHealth */
-        initHealth?: (number|null);
+        initHealth?: (botCraft.IInt32Value2|null);
     }
 
     /** Represents a BuildProperties. */
@@ -993,7 +1173,7 @@ export namespace botCraft {
         public options: botCraft.EntityType[];
 
         /** BuildProperties initHealth. */
-        public initHealth: number;
+        public initHealth?: (botCraft.IInt32Value2|null);
 
         /**
          * Creates a new BuildProperties instance using the specified properties.
@@ -1278,6 +1458,15 @@ export namespace botCraft {
 
         /** State tick */
         tick?: (number|null);
+
+        /** State appliedAttacks */
+        appliedAttacks?: (botCraft.IAppliedAttack[]|null);
+
+        /** State appliedRepairs */
+        appliedRepairs?: (botCraft.IAppliedRepair[]|null);
+
+        /** State appliedBuilds */
+        appliedBuilds?: (botCraft.IAppliedBuild[]|null);
     }
 
     /** Represents a State. */
@@ -1300,6 +1489,15 @@ export namespace botCraft {
 
         /** State tick. */
         public tick: number;
+
+        /** State appliedAttacks. */
+        public appliedAttacks: botCraft.IAppliedAttack[];
+
+        /** State appliedRepairs. */
+        public appliedRepairs: botCraft.IAppliedRepair[];
+
+        /** State appliedBuilds. */
+        public appliedBuilds: botCraft.IAppliedBuild[];
 
         /**
          * Creates a new State instance using the specified properties.
@@ -1380,6 +1578,9 @@ export namespace botCraft {
 
         /** Player score */
         score?: (number|null);
+
+        /** Player resources */
+        resources?: (number|null);
     }
 
     /** Represents a Player. */
@@ -1396,6 +1597,9 @@ export namespace botCraft {
 
         /** Player score. */
         public score: number;
+
+        /** Player resources. */
+        public resources: number;
 
         /**
          * Creates a new Player instance using the specified properties.
@@ -1679,6 +1883,306 @@ export namespace botCraft {
 
         /**
          * Converts this Entity to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+    }
+
+    /** Properties of an AppliedAttack. */
+    interface IAppliedAttack {
+
+        /** AppliedAttack attackerId */
+        attackerId?: (number|null);
+
+        /** AppliedAttack targetId */
+        targetId?: (number|null);
+
+        /** AppliedAttack damage */
+        damage?: (number|null);
+    }
+
+    /** Represents an AppliedAttack. */
+    class AppliedAttack implements IAppliedAttack {
+
+        /**
+         * Constructs a new AppliedAttack.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: botCraft.IAppliedAttack);
+
+        /** AppliedAttack attackerId. */
+        public attackerId: number;
+
+        /** AppliedAttack targetId. */
+        public targetId: number;
+
+        /** AppliedAttack damage. */
+        public damage: number;
+
+        /**
+         * Creates a new AppliedAttack instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns AppliedAttack instance
+         */
+        public static create(properties?: botCraft.IAppliedAttack): botCraft.AppliedAttack;
+
+        /**
+         * Encodes the specified AppliedAttack message. Does not implicitly {@link botCraft.AppliedAttack.verify|verify} messages.
+         * @param message AppliedAttack message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: botCraft.IAppliedAttack, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified AppliedAttack message, length delimited. Does not implicitly {@link botCraft.AppliedAttack.verify|verify} messages.
+         * @param message AppliedAttack message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: botCraft.IAppliedAttack, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an AppliedAttack message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns AppliedAttack
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): botCraft.AppliedAttack;
+
+        /**
+         * Decodes an AppliedAttack message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns AppliedAttack
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): botCraft.AppliedAttack;
+
+        /**
+         * Verifies an AppliedAttack message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an AppliedAttack message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns AppliedAttack
+         */
+        public static fromObject(object: { [k: string]: any }): botCraft.AppliedAttack;
+
+        /**
+         * Creates a plain object from an AppliedAttack message. Also converts values to other types if specified.
+         * @param message AppliedAttack
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: botCraft.AppliedAttack, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this AppliedAttack to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+    }
+
+    /** Properties of an AppliedRepair. */
+    interface IAppliedRepair {
+
+        /** AppliedRepair repairerId */
+        repairerId?: (number|null);
+
+        /** AppliedRepair targetId */
+        targetId?: (number|null);
+
+        /** AppliedRepair healthRestored */
+        healthRestored?: (number|null);
+    }
+
+    /** Represents an AppliedRepair. */
+    class AppliedRepair implements IAppliedRepair {
+
+        /**
+         * Constructs a new AppliedRepair.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: botCraft.IAppliedRepair);
+
+        /** AppliedRepair repairerId. */
+        public repairerId: number;
+
+        /** AppliedRepair targetId. */
+        public targetId: number;
+
+        /** AppliedRepair healthRestored. */
+        public healthRestored: number;
+
+        /**
+         * Creates a new AppliedRepair instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns AppliedRepair instance
+         */
+        public static create(properties?: botCraft.IAppliedRepair): botCraft.AppliedRepair;
+
+        /**
+         * Encodes the specified AppliedRepair message. Does not implicitly {@link botCraft.AppliedRepair.verify|verify} messages.
+         * @param message AppliedRepair message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: botCraft.IAppliedRepair, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified AppliedRepair message, length delimited. Does not implicitly {@link botCraft.AppliedRepair.verify|verify} messages.
+         * @param message AppliedRepair message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: botCraft.IAppliedRepair, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an AppliedRepair message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns AppliedRepair
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): botCraft.AppliedRepair;
+
+        /**
+         * Decodes an AppliedRepair message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns AppliedRepair
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): botCraft.AppliedRepair;
+
+        /**
+         * Verifies an AppliedRepair message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an AppliedRepair message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns AppliedRepair
+         */
+        public static fromObject(object: { [k: string]: any }): botCraft.AppliedRepair;
+
+        /**
+         * Creates a plain object from an AppliedRepair message. Also converts values to other types if specified.
+         * @param message AppliedRepair
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: botCraft.AppliedRepair, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this AppliedRepair to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+    }
+
+    /** Properties of an AppliedBuild. */
+    interface IAppliedBuild {
+
+        /** AppliedBuild builderId */
+        builderId?: (number|null);
+
+        /** AppliedBuild targetId */
+        targetId?: (number|null);
+    }
+
+    /** Represents an AppliedBuild. */
+    class AppliedBuild implements IAppliedBuild {
+
+        /**
+         * Constructs a new AppliedBuild.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: botCraft.IAppliedBuild);
+
+        /** AppliedBuild builderId. */
+        public builderId: number;
+
+        /** AppliedBuild targetId. */
+        public targetId: number;
+
+        /**
+         * Creates a new AppliedBuild instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns AppliedBuild instance
+         */
+        public static create(properties?: botCraft.IAppliedBuild): botCraft.AppliedBuild;
+
+        /**
+         * Encodes the specified AppliedBuild message. Does not implicitly {@link botCraft.AppliedBuild.verify|verify} messages.
+         * @param message AppliedBuild message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: botCraft.IAppliedBuild, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified AppliedBuild message, length delimited. Does not implicitly {@link botCraft.AppliedBuild.verify|verify} messages.
+         * @param message AppliedBuild message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: botCraft.IAppliedBuild, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an AppliedBuild message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns AppliedBuild
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): botCraft.AppliedBuild;
+
+        /**
+         * Decodes an AppliedBuild message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns AppliedBuild
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): botCraft.AppliedBuild;
+
+        /**
+         * Verifies an AppliedBuild message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an AppliedBuild message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns AppliedBuild
+         */
+        public static fromObject(object: { [k: string]: any }): botCraft.AppliedBuild;
+
+        /**
+         * Creates a plain object from an AppliedBuild message. Also converts values to other types if specified.
+         * @param message AppliedBuild
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: botCraft.AppliedBuild, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this AppliedBuild to JSON.
          * @returns JSON object
          */
         public toJSON(): { [k: string]: any };

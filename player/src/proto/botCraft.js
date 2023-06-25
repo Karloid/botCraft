@@ -16,6 +16,193 @@ export const botCraft = $root.botCraft = (() => {
      */
     const botCraft = {};
 
+    botCraft.Int32Value = (function() {
+
+        /**
+         * Properties of an Int32Value.
+         * @memberof botCraft
+         * @interface IInt32Value
+         * @property {number|null} [value] Int32Value value
+         */
+
+        /**
+         * Constructs a new Int32Value.
+         * @memberof botCraft
+         * @classdesc Represents an Int32Value.
+         * @implements IInt32Value
+         * @constructor
+         * @param {botCraft.IInt32Value=} [properties] Properties to set
+         */
+        function Int32Value(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * Int32Value value.
+         * @member {number} value
+         * @memberof botCraft.Int32Value
+         * @instance
+         */
+        Int32Value.prototype.value = 0;
+
+        /**
+         * Creates a new Int32Value instance using the specified properties.
+         * @function create
+         * @memberof botCraft.Int32Value
+         * @static
+         * @param {botCraft.IInt32Value=} [properties] Properties to set
+         * @returns {botCraft.Int32Value} Int32Value instance
+         */
+        Int32Value.create = function create(properties) {
+            return new Int32Value(properties);
+        };
+
+        /**
+         * Encodes the specified Int32Value message. Does not implicitly {@link botCraft.Int32Value.verify|verify} messages.
+         * @function encode
+         * @memberof botCraft.Int32Value
+         * @static
+         * @param {botCraft.IInt32Value} message Int32Value message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Int32Value.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.value != null && Object.hasOwnProperty.call(message, "value"))
+                writer.uint32(/* id 1, wireType 0 =*/8).int32(message.value);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified Int32Value message, length delimited. Does not implicitly {@link botCraft.Int32Value.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof botCraft.Int32Value
+         * @static
+         * @param {botCraft.IInt32Value} message Int32Value message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Int32Value.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an Int32Value message from the specified reader or buffer.
+         * @function decode
+         * @memberof botCraft.Int32Value
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {botCraft.Int32Value} Int32Value
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Int32Value.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.botCraft.Int32Value();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    message.value = reader.int32();
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an Int32Value message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof botCraft.Int32Value
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {botCraft.Int32Value} Int32Value
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Int32Value.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an Int32Value message.
+         * @function verify
+         * @memberof botCraft.Int32Value
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        Int32Value.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.value != null && message.hasOwnProperty("value"))
+                if (!$util.isInteger(message.value))
+                    return "value: integer expected";
+            return null;
+        };
+
+        /**
+         * Creates an Int32Value message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof botCraft.Int32Value
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {botCraft.Int32Value} Int32Value
+         */
+        Int32Value.fromObject = function fromObject(object) {
+            if (object instanceof $root.botCraft.Int32Value)
+                return object;
+            let message = new $root.botCraft.Int32Value();
+            if (object.value != null)
+                message.value = object.value | 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an Int32Value message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof botCraft.Int32Value
+         * @static
+         * @param {botCraft.Int32Value} message Int32Value
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        Int32Value.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults)
+                object.value = 0;
+            if (message.value != null && message.hasOwnProperty("value"))
+                object.value = message.value;
+            return object;
+        };
+
+        /**
+         * Converts this Int32Value to JSON.
+         * @function toJSON
+         * @memberof botCraft.Int32Value
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        Int32Value.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        return Int32Value;
+    })();
+
     botCraft.Action = (function() {
 
         /**
@@ -1034,7 +1221,7 @@ export const botCraft = $root.botCraft = (() => {
          * Properties of an AttackAction.
          * @memberof botCraft
          * @interface IAttackAction
-         * @property {number|null} [target] AttackAction target
+         * @property {botCraft.IInt32Value|null} [targetId] AttackAction targetId
          * @property {botCraft.IAutoAttack|null} [autoAttack] AttackAction autoAttack
          */
 
@@ -1054,12 +1241,12 @@ export const botCraft = $root.botCraft = (() => {
         }
 
         /**
-         * AttackAction target.
-         * @member {number} target
+         * AttackAction targetId.
+         * @member {botCraft.IInt32Value|null|undefined} targetId
          * @memberof botCraft.AttackAction
          * @instance
          */
-        AttackAction.prototype.target = 0;
+        AttackAction.prototype.targetId = null;
 
         /**
          * AttackAction autoAttack.
@@ -1093,8 +1280,8 @@ export const botCraft = $root.botCraft = (() => {
         AttackAction.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.target != null && Object.hasOwnProperty.call(message, "target"))
-                writer.uint32(/* id 1, wireType 0 =*/8).int32(message.target);
+            if (message.targetId != null && Object.hasOwnProperty.call(message, "targetId"))
+                $root.botCraft.Int32Value.encode(message.targetId, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
             if (message.autoAttack != null && Object.hasOwnProperty.call(message, "autoAttack"))
                 $root.botCraft.AutoAttack.encode(message.autoAttack, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
             return writer;
@@ -1132,7 +1319,7 @@ export const botCraft = $root.botCraft = (() => {
                 let tag = reader.uint32();
                 switch (tag >>> 3) {
                 case 1:
-                    message.target = reader.int32();
+                    message.targetId = $root.botCraft.Int32Value.decode(reader, reader.uint32());
                     break;
                 case 2:
                     message.autoAttack = $root.botCraft.AutoAttack.decode(reader, reader.uint32());
@@ -1172,9 +1359,11 @@ export const botCraft = $root.botCraft = (() => {
         AttackAction.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.target != null && message.hasOwnProperty("target"))
-                if (!$util.isInteger(message.target))
-                    return "target: integer expected";
+            if (message.targetId != null && message.hasOwnProperty("targetId")) {
+                let error = $root.botCraft.Int32Value.verify(message.targetId);
+                if (error)
+                    return "targetId." + error;
+            }
             if (message.autoAttack != null && message.hasOwnProperty("autoAttack")) {
                 let error = $root.botCraft.AutoAttack.verify(message.autoAttack);
                 if (error)
@@ -1195,8 +1384,11 @@ export const botCraft = $root.botCraft = (() => {
             if (object instanceof $root.botCraft.AttackAction)
                 return object;
             let message = new $root.botCraft.AttackAction();
-            if (object.target != null)
-                message.target = object.target | 0;
+            if (object.targetId != null) {
+                if (typeof object.targetId !== "object")
+                    throw TypeError(".botCraft.AttackAction.targetId: object expected");
+                message.targetId = $root.botCraft.Int32Value.fromObject(object.targetId);
+            }
             if (object.autoAttack != null) {
                 if (typeof object.autoAttack !== "object")
                     throw TypeError(".botCraft.AttackAction.autoAttack: object expected");
@@ -1219,11 +1411,11 @@ export const botCraft = $root.botCraft = (() => {
                 options = {};
             let object = {};
             if (options.defaults) {
-                object.target = 0;
+                object.targetId = null;
                 object.autoAttack = null;
             }
-            if (message.target != null && message.hasOwnProperty("target"))
-                object.target = message.target;
+            if (message.targetId != null && message.hasOwnProperty("targetId"))
+                object.targetId = $root.botCraft.Int32Value.toObject(message.targetId, options);
             if (message.autoAttack != null && message.hasOwnProperty("autoAttack"))
                 object.autoAttack = $root.botCraft.AutoAttack.toObject(message.autoAttack, options);
             return object;
@@ -1717,6 +1909,193 @@ export const botCraft = $root.botCraft = (() => {
         };
 
         return RepairAction;
+    })();
+
+    botCraft.Int32Value2 = (function() {
+
+        /**
+         * Properties of an Int32Value2.
+         * @memberof botCraft
+         * @interface IInt32Value2
+         * @property {number|null} [value] Int32Value2 value
+         */
+
+        /**
+         * Constructs a new Int32Value2.
+         * @memberof botCraft
+         * @classdesc Represents an Int32Value2.
+         * @implements IInt32Value2
+         * @constructor
+         * @param {botCraft.IInt32Value2=} [properties] Properties to set
+         */
+        function Int32Value2(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * Int32Value2 value.
+         * @member {number} value
+         * @memberof botCraft.Int32Value2
+         * @instance
+         */
+        Int32Value2.prototype.value = 0;
+
+        /**
+         * Creates a new Int32Value2 instance using the specified properties.
+         * @function create
+         * @memberof botCraft.Int32Value2
+         * @static
+         * @param {botCraft.IInt32Value2=} [properties] Properties to set
+         * @returns {botCraft.Int32Value2} Int32Value2 instance
+         */
+        Int32Value2.create = function create(properties) {
+            return new Int32Value2(properties);
+        };
+
+        /**
+         * Encodes the specified Int32Value2 message. Does not implicitly {@link botCraft.Int32Value2.verify|verify} messages.
+         * @function encode
+         * @memberof botCraft.Int32Value2
+         * @static
+         * @param {botCraft.IInt32Value2} message Int32Value2 message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Int32Value2.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.value != null && Object.hasOwnProperty.call(message, "value"))
+                writer.uint32(/* id 1, wireType 0 =*/8).int32(message.value);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified Int32Value2 message, length delimited. Does not implicitly {@link botCraft.Int32Value2.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof botCraft.Int32Value2
+         * @static
+         * @param {botCraft.IInt32Value2} message Int32Value2 message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Int32Value2.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an Int32Value2 message from the specified reader or buffer.
+         * @function decode
+         * @memberof botCraft.Int32Value2
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {botCraft.Int32Value2} Int32Value2
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Int32Value2.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.botCraft.Int32Value2();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    message.value = reader.int32();
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an Int32Value2 message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof botCraft.Int32Value2
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {botCraft.Int32Value2} Int32Value2
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Int32Value2.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an Int32Value2 message.
+         * @function verify
+         * @memberof botCraft.Int32Value2
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        Int32Value2.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.value != null && message.hasOwnProperty("value"))
+                if (!$util.isInteger(message.value))
+                    return "value: integer expected";
+            return null;
+        };
+
+        /**
+         * Creates an Int32Value2 message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof botCraft.Int32Value2
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {botCraft.Int32Value2} Int32Value2
+         */
+        Int32Value2.fromObject = function fromObject(object) {
+            if (object instanceof $root.botCraft.Int32Value2)
+                return object;
+            let message = new $root.botCraft.Int32Value2();
+            if (object.value != null)
+                message.value = object.value | 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an Int32Value2 message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof botCraft.Int32Value2
+         * @static
+         * @param {botCraft.Int32Value2} message Int32Value2
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        Int32Value2.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults)
+                object.value = 0;
+            if (message.value != null && message.hasOwnProperty("value"))
+                object.value = message.value;
+            return object;
+        };
+
+        /**
+         * Converts this Int32Value2 to JSON.
+         * @function toJSON
+         * @memberof botCraft.Int32Value2
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        Int32Value2.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        return Int32Value2;
     })();
 
     botCraft.Options = (function() {
@@ -2574,7 +2953,7 @@ export const botCraft = $root.botCraft = (() => {
          * @memberof botCraft
          * @interface IBuildProperties
          * @property {Array.<botCraft.EntityType>|null} [options] BuildProperties options
-         * @property {number|null} [initHealth] BuildProperties initHealth
+         * @property {botCraft.IInt32Value2|null} [initHealth] BuildProperties initHealth
          */
 
         /**
@@ -2603,11 +2982,11 @@ export const botCraft = $root.botCraft = (() => {
 
         /**
          * BuildProperties initHealth.
-         * @member {number} initHealth
+         * @member {botCraft.IInt32Value2|null|undefined} initHealth
          * @memberof botCraft.BuildProperties
          * @instance
          */
-        BuildProperties.prototype.initHealth = 0;
+        BuildProperties.prototype.initHealth = null;
 
         /**
          * Creates a new BuildProperties instance using the specified properties.
@@ -2640,7 +3019,7 @@ export const botCraft = $root.botCraft = (() => {
                 writer.ldelim();
             }
             if (message.initHealth != null && Object.hasOwnProperty.call(message, "initHealth"))
-                writer.uint32(/* id 2, wireType 0 =*/16).int32(message.initHealth);
+                $root.botCraft.Int32Value2.encode(message.initHealth, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
             return writer;
         };
 
@@ -2686,7 +3065,7 @@ export const botCraft = $root.botCraft = (() => {
                         message.options.push(reader.int32());
                     break;
                 case 2:
-                    message.initHealth = reader.int32();
+                    message.initHealth = $root.botCraft.Int32Value2.decode(reader, reader.uint32());
                     break;
                 default:
                     reader.skipType(tag & 7);
@@ -2743,9 +3122,11 @@ export const botCraft = $root.botCraft = (() => {
                         break;
                     }
             }
-            if (message.initHealth != null && message.hasOwnProperty("initHealth"))
-                if (!$util.isInteger(message.initHealth))
-                    return "initHealth: integer expected";
+            if (message.initHealth != null && message.hasOwnProperty("initHealth")) {
+                let error = $root.botCraft.Int32Value2.verify(message.initHealth);
+                if (error)
+                    return "initHealth." + error;
+            }
             return null;
         };
 
@@ -2810,8 +3191,11 @@ export const botCraft = $root.botCraft = (() => {
                         break;
                     }
             }
-            if (object.initHealth != null)
-                message.initHealth = object.initHealth | 0;
+            if (object.initHealth != null) {
+                if (typeof object.initHealth !== "object")
+                    throw TypeError(".botCraft.BuildProperties.initHealth: object expected");
+                message.initHealth = $root.botCraft.Int32Value2.fromObject(object.initHealth);
+            }
             return message;
         };
 
@@ -2831,14 +3215,14 @@ export const botCraft = $root.botCraft = (() => {
             if (options.arrays || options.defaults)
                 object.options = [];
             if (options.defaults)
-                object.initHealth = 0;
+                object.initHealth = null;
             if (message.options && message.options.length) {
                 object.options = [];
                 for (let j = 0; j < message.options.length; ++j)
                     object.options[j] = options.enums === String ? $root.botCraft.EntityType[message.options[j]] : message.options[j];
             }
             if (message.initHealth != null && message.hasOwnProperty("initHealth"))
-                object.initHealth = message.initHealth;
+                object.initHealth = $root.botCraft.Int32Value2.toObject(message.initHealth, options);
             return object;
         };
 
@@ -3387,6 +3771,9 @@ export const botCraft = $root.botCraft = (() => {
          * @property {Array.<botCraft.IPlayer>|null} [players] State players
          * @property {number|null} [nextId] State nextId
          * @property {number|null} [tick] State tick
+         * @property {Array.<botCraft.IAppliedAttack>|null} [appliedAttacks] State appliedAttacks
+         * @property {Array.<botCraft.IAppliedRepair>|null} [appliedRepairs] State appliedRepairs
+         * @property {Array.<botCraft.IAppliedBuild>|null} [appliedBuilds] State appliedBuilds
          */
 
         /**
@@ -3400,6 +3787,9 @@ export const botCraft = $root.botCraft = (() => {
         function State(properties) {
             this.entities = [];
             this.players = [];
+            this.appliedAttacks = [];
+            this.appliedRepairs = [];
+            this.appliedBuilds = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
@@ -3439,6 +3829,30 @@ export const botCraft = $root.botCraft = (() => {
         State.prototype.tick = 0;
 
         /**
+         * State appliedAttacks.
+         * @member {Array.<botCraft.IAppliedAttack>} appliedAttacks
+         * @memberof botCraft.State
+         * @instance
+         */
+        State.prototype.appliedAttacks = $util.emptyArray;
+
+        /**
+         * State appliedRepairs.
+         * @member {Array.<botCraft.IAppliedRepair>} appliedRepairs
+         * @memberof botCraft.State
+         * @instance
+         */
+        State.prototype.appliedRepairs = $util.emptyArray;
+
+        /**
+         * State appliedBuilds.
+         * @member {Array.<botCraft.IAppliedBuild>} appliedBuilds
+         * @memberof botCraft.State
+         * @instance
+         */
+        State.prototype.appliedBuilds = $util.emptyArray;
+
+        /**
          * Creates a new State instance using the specified properties.
          * @function create
          * @memberof botCraft.State
@@ -3472,6 +3886,15 @@ export const botCraft = $root.botCraft = (() => {
                 writer.uint32(/* id 4, wireType 0 =*/32).int32(message.nextId);
             if (message.tick != null && Object.hasOwnProperty.call(message, "tick"))
                 writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.tick);
+            if (message.appliedAttacks != null && message.appliedAttacks.length)
+                for (let i = 0; i < message.appliedAttacks.length; ++i)
+                    $root.botCraft.AppliedAttack.encode(message.appliedAttacks[i], writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
+            if (message.appliedRepairs != null && message.appliedRepairs.length)
+                for (let i = 0; i < message.appliedRepairs.length; ++i)
+                    $root.botCraft.AppliedRepair.encode(message.appliedRepairs[i], writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
+            if (message.appliedBuilds != null && message.appliedBuilds.length)
+                for (let i = 0; i < message.appliedBuilds.length; ++i)
+                    $root.botCraft.AppliedBuild.encode(message.appliedBuilds[i], writer.uint32(/* id 8, wireType 2 =*/66).fork()).ldelim();
             return writer;
         };
 
@@ -3521,6 +3944,21 @@ export const botCraft = $root.botCraft = (() => {
                     break;
                 case 5:
                     message.tick = reader.uint32();
+                    break;
+                case 6:
+                    if (!(message.appliedAttacks && message.appliedAttacks.length))
+                        message.appliedAttacks = [];
+                    message.appliedAttacks.push($root.botCraft.AppliedAttack.decode(reader, reader.uint32()));
+                    break;
+                case 7:
+                    if (!(message.appliedRepairs && message.appliedRepairs.length))
+                        message.appliedRepairs = [];
+                    message.appliedRepairs.push($root.botCraft.AppliedRepair.decode(reader, reader.uint32()));
+                    break;
+                case 8:
+                    if (!(message.appliedBuilds && message.appliedBuilds.length))
+                        message.appliedBuilds = [];
+                    message.appliedBuilds.push($root.botCraft.AppliedBuild.decode(reader, reader.uint32()));
                     break;
                 default:
                     reader.skipType(tag & 7);
@@ -3581,6 +4019,33 @@ export const botCraft = $root.botCraft = (() => {
             if (message.tick != null && message.hasOwnProperty("tick"))
                 if (!$util.isInteger(message.tick))
                     return "tick: integer expected";
+            if (message.appliedAttacks != null && message.hasOwnProperty("appliedAttacks")) {
+                if (!Array.isArray(message.appliedAttacks))
+                    return "appliedAttacks: array expected";
+                for (let i = 0; i < message.appliedAttacks.length; ++i) {
+                    let error = $root.botCraft.AppliedAttack.verify(message.appliedAttacks[i]);
+                    if (error)
+                        return "appliedAttacks." + error;
+                }
+            }
+            if (message.appliedRepairs != null && message.hasOwnProperty("appliedRepairs")) {
+                if (!Array.isArray(message.appliedRepairs))
+                    return "appliedRepairs: array expected";
+                for (let i = 0; i < message.appliedRepairs.length; ++i) {
+                    let error = $root.botCraft.AppliedRepair.verify(message.appliedRepairs[i]);
+                    if (error)
+                        return "appliedRepairs." + error;
+                }
+            }
+            if (message.appliedBuilds != null && message.hasOwnProperty("appliedBuilds")) {
+                if (!Array.isArray(message.appliedBuilds))
+                    return "appliedBuilds: array expected";
+                for (let i = 0; i < message.appliedBuilds.length; ++i) {
+                    let error = $root.botCraft.AppliedBuild.verify(message.appliedBuilds[i]);
+                    if (error)
+                        return "appliedBuilds." + error;
+                }
+            }
             return null;
         };
 
@@ -3620,6 +4085,36 @@ export const botCraft = $root.botCraft = (() => {
                 message.nextId = object.nextId | 0;
             if (object.tick != null)
                 message.tick = object.tick >>> 0;
+            if (object.appliedAttacks) {
+                if (!Array.isArray(object.appliedAttacks))
+                    throw TypeError(".botCraft.State.appliedAttacks: array expected");
+                message.appliedAttacks = [];
+                for (let i = 0; i < object.appliedAttacks.length; ++i) {
+                    if (typeof object.appliedAttacks[i] !== "object")
+                        throw TypeError(".botCraft.State.appliedAttacks: object expected");
+                    message.appliedAttacks[i] = $root.botCraft.AppliedAttack.fromObject(object.appliedAttacks[i]);
+                }
+            }
+            if (object.appliedRepairs) {
+                if (!Array.isArray(object.appliedRepairs))
+                    throw TypeError(".botCraft.State.appliedRepairs: array expected");
+                message.appliedRepairs = [];
+                for (let i = 0; i < object.appliedRepairs.length; ++i) {
+                    if (typeof object.appliedRepairs[i] !== "object")
+                        throw TypeError(".botCraft.State.appliedRepairs: object expected");
+                    message.appliedRepairs[i] = $root.botCraft.AppliedRepair.fromObject(object.appliedRepairs[i]);
+                }
+            }
+            if (object.appliedBuilds) {
+                if (!Array.isArray(object.appliedBuilds))
+                    throw TypeError(".botCraft.State.appliedBuilds: array expected");
+                message.appliedBuilds = [];
+                for (let i = 0; i < object.appliedBuilds.length; ++i) {
+                    if (typeof object.appliedBuilds[i] !== "object")
+                        throw TypeError(".botCraft.State.appliedBuilds: object expected");
+                    message.appliedBuilds[i] = $root.botCraft.AppliedBuild.fromObject(object.appliedBuilds[i]);
+                }
+            }
             return message;
         };
 
@@ -3639,6 +4134,9 @@ export const botCraft = $root.botCraft = (() => {
             if (options.arrays || options.defaults) {
                 object.entities = [];
                 object.players = [];
+                object.appliedAttacks = [];
+                object.appliedRepairs = [];
+                object.appliedBuilds = [];
             }
             if (options.defaults) {
                 object.nextId = 0;
@@ -3658,6 +4156,21 @@ export const botCraft = $root.botCraft = (() => {
                 object.nextId = message.nextId;
             if (message.tick != null && message.hasOwnProperty("tick"))
                 object.tick = message.tick;
+            if (message.appliedAttacks && message.appliedAttacks.length) {
+                object.appliedAttacks = [];
+                for (let j = 0; j < message.appliedAttacks.length; ++j)
+                    object.appliedAttacks[j] = $root.botCraft.AppliedAttack.toObject(message.appliedAttacks[j], options);
+            }
+            if (message.appliedRepairs && message.appliedRepairs.length) {
+                object.appliedRepairs = [];
+                for (let j = 0; j < message.appliedRepairs.length; ++j)
+                    object.appliedRepairs[j] = $root.botCraft.AppliedRepair.toObject(message.appliedRepairs[j], options);
+            }
+            if (message.appliedBuilds && message.appliedBuilds.length) {
+                object.appliedBuilds = [];
+                for (let j = 0; j < message.appliedBuilds.length; ++j)
+                    object.appliedBuilds[j] = $root.botCraft.AppliedBuild.toObject(message.appliedBuilds[j], options);
+            }
             return object;
         };
 
@@ -3683,6 +4196,7 @@ export const botCraft = $root.botCraft = (() => {
          * @interface IPlayer
          * @property {number|null} [id] Player id
          * @property {number|null} [score] Player score
+         * @property {number|null} [resources] Player resources
          */
 
         /**
@@ -3717,6 +4231,14 @@ export const botCraft = $root.botCraft = (() => {
         Player.prototype.score = 0;
 
         /**
+         * Player resources.
+         * @member {number} resources
+         * @memberof botCraft.Player
+         * @instance
+         */
+        Player.prototype.resources = 0;
+
+        /**
          * Creates a new Player instance using the specified properties.
          * @function create
          * @memberof botCraft.Player
@@ -3744,6 +4266,8 @@ export const botCraft = $root.botCraft = (() => {
                 writer.uint32(/* id 1, wireType 0 =*/8).int32(message.id);
             if (message.score != null && Object.hasOwnProperty.call(message, "score"))
                 writer.uint32(/* id 2, wireType 0 =*/16).int32(message.score);
+            if (message.resources != null && Object.hasOwnProperty.call(message, "resources"))
+                writer.uint32(/* id 3, wireType 0 =*/24).int32(message.resources);
             return writer;
         };
 
@@ -3783,6 +4307,9 @@ export const botCraft = $root.botCraft = (() => {
                     break;
                 case 2:
                     message.score = reader.int32();
+                    break;
+                case 3:
+                    message.resources = reader.int32();
                     break;
                 default:
                     reader.skipType(tag & 7);
@@ -3825,6 +4352,9 @@ export const botCraft = $root.botCraft = (() => {
             if (message.score != null && message.hasOwnProperty("score"))
                 if (!$util.isInteger(message.score))
                     return "score: integer expected";
+            if (message.resources != null && message.hasOwnProperty("resources"))
+                if (!$util.isInteger(message.resources))
+                    return "resources: integer expected";
             return null;
         };
 
@@ -3844,6 +4374,8 @@ export const botCraft = $root.botCraft = (() => {
                 message.id = object.id | 0;
             if (object.score != null)
                 message.score = object.score | 0;
+            if (object.resources != null)
+                message.resources = object.resources | 0;
             return message;
         };
 
@@ -3863,11 +4395,14 @@ export const botCraft = $root.botCraft = (() => {
             if (options.defaults) {
                 object.id = 0;
                 object.score = 0;
+                object.resources = 0;
             }
             if (message.id != null && message.hasOwnProperty("id"))
                 object.id = message.id;
             if (message.score != null && message.hasOwnProperty("score"))
                 object.score = message.score;
+            if (message.resources != null && message.hasOwnProperty("resources"))
+                object.resources = message.resources;
             return object;
         };
 
@@ -4449,6 +4984,680 @@ export const botCraft = $root.botCraft = (() => {
         };
 
         return Entity;
+    })();
+
+    botCraft.AppliedAttack = (function() {
+
+        /**
+         * Properties of an AppliedAttack.
+         * @memberof botCraft
+         * @interface IAppliedAttack
+         * @property {number|null} [attackerId] AppliedAttack attackerId
+         * @property {number|null} [targetId] AppliedAttack targetId
+         * @property {number|null} [damage] AppliedAttack damage
+         */
+
+        /**
+         * Constructs a new AppliedAttack.
+         * @memberof botCraft
+         * @classdesc Represents an AppliedAttack.
+         * @implements IAppliedAttack
+         * @constructor
+         * @param {botCraft.IAppliedAttack=} [properties] Properties to set
+         */
+        function AppliedAttack(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * AppliedAttack attackerId.
+         * @member {number} attackerId
+         * @memberof botCraft.AppliedAttack
+         * @instance
+         */
+        AppliedAttack.prototype.attackerId = 0;
+
+        /**
+         * AppliedAttack targetId.
+         * @member {number} targetId
+         * @memberof botCraft.AppliedAttack
+         * @instance
+         */
+        AppliedAttack.prototype.targetId = 0;
+
+        /**
+         * AppliedAttack damage.
+         * @member {number} damage
+         * @memberof botCraft.AppliedAttack
+         * @instance
+         */
+        AppliedAttack.prototype.damage = 0;
+
+        /**
+         * Creates a new AppliedAttack instance using the specified properties.
+         * @function create
+         * @memberof botCraft.AppliedAttack
+         * @static
+         * @param {botCraft.IAppliedAttack=} [properties] Properties to set
+         * @returns {botCraft.AppliedAttack} AppliedAttack instance
+         */
+        AppliedAttack.create = function create(properties) {
+            return new AppliedAttack(properties);
+        };
+
+        /**
+         * Encodes the specified AppliedAttack message. Does not implicitly {@link botCraft.AppliedAttack.verify|verify} messages.
+         * @function encode
+         * @memberof botCraft.AppliedAttack
+         * @static
+         * @param {botCraft.IAppliedAttack} message AppliedAttack message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        AppliedAttack.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.attackerId != null && Object.hasOwnProperty.call(message, "attackerId"))
+                writer.uint32(/* id 1, wireType 0 =*/8).int32(message.attackerId);
+            if (message.targetId != null && Object.hasOwnProperty.call(message, "targetId"))
+                writer.uint32(/* id 2, wireType 0 =*/16).int32(message.targetId);
+            if (message.damage != null && Object.hasOwnProperty.call(message, "damage"))
+                writer.uint32(/* id 3, wireType 0 =*/24).int32(message.damage);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified AppliedAttack message, length delimited. Does not implicitly {@link botCraft.AppliedAttack.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof botCraft.AppliedAttack
+         * @static
+         * @param {botCraft.IAppliedAttack} message AppliedAttack message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        AppliedAttack.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an AppliedAttack message from the specified reader or buffer.
+         * @function decode
+         * @memberof botCraft.AppliedAttack
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {botCraft.AppliedAttack} AppliedAttack
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        AppliedAttack.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.botCraft.AppliedAttack();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    message.attackerId = reader.int32();
+                    break;
+                case 2:
+                    message.targetId = reader.int32();
+                    break;
+                case 3:
+                    message.damage = reader.int32();
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an AppliedAttack message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof botCraft.AppliedAttack
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {botCraft.AppliedAttack} AppliedAttack
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        AppliedAttack.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an AppliedAttack message.
+         * @function verify
+         * @memberof botCraft.AppliedAttack
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        AppliedAttack.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.attackerId != null && message.hasOwnProperty("attackerId"))
+                if (!$util.isInteger(message.attackerId))
+                    return "attackerId: integer expected";
+            if (message.targetId != null && message.hasOwnProperty("targetId"))
+                if (!$util.isInteger(message.targetId))
+                    return "targetId: integer expected";
+            if (message.damage != null && message.hasOwnProperty("damage"))
+                if (!$util.isInteger(message.damage))
+                    return "damage: integer expected";
+            return null;
+        };
+
+        /**
+         * Creates an AppliedAttack message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof botCraft.AppliedAttack
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {botCraft.AppliedAttack} AppliedAttack
+         */
+        AppliedAttack.fromObject = function fromObject(object) {
+            if (object instanceof $root.botCraft.AppliedAttack)
+                return object;
+            let message = new $root.botCraft.AppliedAttack();
+            if (object.attackerId != null)
+                message.attackerId = object.attackerId | 0;
+            if (object.targetId != null)
+                message.targetId = object.targetId | 0;
+            if (object.damage != null)
+                message.damage = object.damage | 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an AppliedAttack message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof botCraft.AppliedAttack
+         * @static
+         * @param {botCraft.AppliedAttack} message AppliedAttack
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        AppliedAttack.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.attackerId = 0;
+                object.targetId = 0;
+                object.damage = 0;
+            }
+            if (message.attackerId != null && message.hasOwnProperty("attackerId"))
+                object.attackerId = message.attackerId;
+            if (message.targetId != null && message.hasOwnProperty("targetId"))
+                object.targetId = message.targetId;
+            if (message.damage != null && message.hasOwnProperty("damage"))
+                object.damage = message.damage;
+            return object;
+        };
+
+        /**
+         * Converts this AppliedAttack to JSON.
+         * @function toJSON
+         * @memberof botCraft.AppliedAttack
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        AppliedAttack.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        return AppliedAttack;
+    })();
+
+    botCraft.AppliedRepair = (function() {
+
+        /**
+         * Properties of an AppliedRepair.
+         * @memberof botCraft
+         * @interface IAppliedRepair
+         * @property {number|null} [repairerId] AppliedRepair repairerId
+         * @property {number|null} [targetId] AppliedRepair targetId
+         * @property {number|null} [healthRestored] AppliedRepair healthRestored
+         */
+
+        /**
+         * Constructs a new AppliedRepair.
+         * @memberof botCraft
+         * @classdesc Represents an AppliedRepair.
+         * @implements IAppliedRepair
+         * @constructor
+         * @param {botCraft.IAppliedRepair=} [properties] Properties to set
+         */
+        function AppliedRepair(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * AppliedRepair repairerId.
+         * @member {number} repairerId
+         * @memberof botCraft.AppliedRepair
+         * @instance
+         */
+        AppliedRepair.prototype.repairerId = 0;
+
+        /**
+         * AppliedRepair targetId.
+         * @member {number} targetId
+         * @memberof botCraft.AppliedRepair
+         * @instance
+         */
+        AppliedRepair.prototype.targetId = 0;
+
+        /**
+         * AppliedRepair healthRestored.
+         * @member {number} healthRestored
+         * @memberof botCraft.AppliedRepair
+         * @instance
+         */
+        AppliedRepair.prototype.healthRestored = 0;
+
+        /**
+         * Creates a new AppliedRepair instance using the specified properties.
+         * @function create
+         * @memberof botCraft.AppliedRepair
+         * @static
+         * @param {botCraft.IAppliedRepair=} [properties] Properties to set
+         * @returns {botCraft.AppliedRepair} AppliedRepair instance
+         */
+        AppliedRepair.create = function create(properties) {
+            return new AppliedRepair(properties);
+        };
+
+        /**
+         * Encodes the specified AppliedRepair message. Does not implicitly {@link botCraft.AppliedRepair.verify|verify} messages.
+         * @function encode
+         * @memberof botCraft.AppliedRepair
+         * @static
+         * @param {botCraft.IAppliedRepair} message AppliedRepair message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        AppliedRepair.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.repairerId != null && Object.hasOwnProperty.call(message, "repairerId"))
+                writer.uint32(/* id 1, wireType 0 =*/8).int32(message.repairerId);
+            if (message.targetId != null && Object.hasOwnProperty.call(message, "targetId"))
+                writer.uint32(/* id 2, wireType 0 =*/16).int32(message.targetId);
+            if (message.healthRestored != null && Object.hasOwnProperty.call(message, "healthRestored"))
+                writer.uint32(/* id 3, wireType 0 =*/24).int32(message.healthRestored);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified AppliedRepair message, length delimited. Does not implicitly {@link botCraft.AppliedRepair.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof botCraft.AppliedRepair
+         * @static
+         * @param {botCraft.IAppliedRepair} message AppliedRepair message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        AppliedRepair.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an AppliedRepair message from the specified reader or buffer.
+         * @function decode
+         * @memberof botCraft.AppliedRepair
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {botCraft.AppliedRepair} AppliedRepair
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        AppliedRepair.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.botCraft.AppliedRepair();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    message.repairerId = reader.int32();
+                    break;
+                case 2:
+                    message.targetId = reader.int32();
+                    break;
+                case 3:
+                    message.healthRestored = reader.int32();
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an AppliedRepair message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof botCraft.AppliedRepair
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {botCraft.AppliedRepair} AppliedRepair
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        AppliedRepair.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an AppliedRepair message.
+         * @function verify
+         * @memberof botCraft.AppliedRepair
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        AppliedRepair.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.repairerId != null && message.hasOwnProperty("repairerId"))
+                if (!$util.isInteger(message.repairerId))
+                    return "repairerId: integer expected";
+            if (message.targetId != null && message.hasOwnProperty("targetId"))
+                if (!$util.isInteger(message.targetId))
+                    return "targetId: integer expected";
+            if (message.healthRestored != null && message.hasOwnProperty("healthRestored"))
+                if (!$util.isInteger(message.healthRestored))
+                    return "healthRestored: integer expected";
+            return null;
+        };
+
+        /**
+         * Creates an AppliedRepair message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof botCraft.AppliedRepair
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {botCraft.AppliedRepair} AppliedRepair
+         */
+        AppliedRepair.fromObject = function fromObject(object) {
+            if (object instanceof $root.botCraft.AppliedRepair)
+                return object;
+            let message = new $root.botCraft.AppliedRepair();
+            if (object.repairerId != null)
+                message.repairerId = object.repairerId | 0;
+            if (object.targetId != null)
+                message.targetId = object.targetId | 0;
+            if (object.healthRestored != null)
+                message.healthRestored = object.healthRestored | 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an AppliedRepair message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof botCraft.AppliedRepair
+         * @static
+         * @param {botCraft.AppliedRepair} message AppliedRepair
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        AppliedRepair.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.repairerId = 0;
+                object.targetId = 0;
+                object.healthRestored = 0;
+            }
+            if (message.repairerId != null && message.hasOwnProperty("repairerId"))
+                object.repairerId = message.repairerId;
+            if (message.targetId != null && message.hasOwnProperty("targetId"))
+                object.targetId = message.targetId;
+            if (message.healthRestored != null && message.hasOwnProperty("healthRestored"))
+                object.healthRestored = message.healthRestored;
+            return object;
+        };
+
+        /**
+         * Converts this AppliedRepair to JSON.
+         * @function toJSON
+         * @memberof botCraft.AppliedRepair
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        AppliedRepair.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        return AppliedRepair;
+    })();
+
+    botCraft.AppliedBuild = (function() {
+
+        /**
+         * Properties of an AppliedBuild.
+         * @memberof botCraft
+         * @interface IAppliedBuild
+         * @property {number|null} [builderId] AppliedBuild builderId
+         * @property {number|null} [targetId] AppliedBuild targetId
+         */
+
+        /**
+         * Constructs a new AppliedBuild.
+         * @memberof botCraft
+         * @classdesc Represents an AppliedBuild.
+         * @implements IAppliedBuild
+         * @constructor
+         * @param {botCraft.IAppliedBuild=} [properties] Properties to set
+         */
+        function AppliedBuild(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * AppliedBuild builderId.
+         * @member {number} builderId
+         * @memberof botCraft.AppliedBuild
+         * @instance
+         */
+        AppliedBuild.prototype.builderId = 0;
+
+        /**
+         * AppliedBuild targetId.
+         * @member {number} targetId
+         * @memberof botCraft.AppliedBuild
+         * @instance
+         */
+        AppliedBuild.prototype.targetId = 0;
+
+        /**
+         * Creates a new AppliedBuild instance using the specified properties.
+         * @function create
+         * @memberof botCraft.AppliedBuild
+         * @static
+         * @param {botCraft.IAppliedBuild=} [properties] Properties to set
+         * @returns {botCraft.AppliedBuild} AppliedBuild instance
+         */
+        AppliedBuild.create = function create(properties) {
+            return new AppliedBuild(properties);
+        };
+
+        /**
+         * Encodes the specified AppliedBuild message. Does not implicitly {@link botCraft.AppliedBuild.verify|verify} messages.
+         * @function encode
+         * @memberof botCraft.AppliedBuild
+         * @static
+         * @param {botCraft.IAppliedBuild} message AppliedBuild message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        AppliedBuild.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.builderId != null && Object.hasOwnProperty.call(message, "builderId"))
+                writer.uint32(/* id 1, wireType 0 =*/8).int32(message.builderId);
+            if (message.targetId != null && Object.hasOwnProperty.call(message, "targetId"))
+                writer.uint32(/* id 2, wireType 0 =*/16).int32(message.targetId);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified AppliedBuild message, length delimited. Does not implicitly {@link botCraft.AppliedBuild.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof botCraft.AppliedBuild
+         * @static
+         * @param {botCraft.IAppliedBuild} message AppliedBuild message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        AppliedBuild.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an AppliedBuild message from the specified reader or buffer.
+         * @function decode
+         * @memberof botCraft.AppliedBuild
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {botCraft.AppliedBuild} AppliedBuild
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        AppliedBuild.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.botCraft.AppliedBuild();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    message.builderId = reader.int32();
+                    break;
+                case 2:
+                    message.targetId = reader.int32();
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an AppliedBuild message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof botCraft.AppliedBuild
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {botCraft.AppliedBuild} AppliedBuild
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        AppliedBuild.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an AppliedBuild message.
+         * @function verify
+         * @memberof botCraft.AppliedBuild
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        AppliedBuild.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.builderId != null && message.hasOwnProperty("builderId"))
+                if (!$util.isInteger(message.builderId))
+                    return "builderId: integer expected";
+            if (message.targetId != null && message.hasOwnProperty("targetId"))
+                if (!$util.isInteger(message.targetId))
+                    return "targetId: integer expected";
+            return null;
+        };
+
+        /**
+         * Creates an AppliedBuild message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof botCraft.AppliedBuild
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {botCraft.AppliedBuild} AppliedBuild
+         */
+        AppliedBuild.fromObject = function fromObject(object) {
+            if (object instanceof $root.botCraft.AppliedBuild)
+                return object;
+            let message = new $root.botCraft.AppliedBuild();
+            if (object.builderId != null)
+                message.builderId = object.builderId | 0;
+            if (object.targetId != null)
+                message.targetId = object.targetId | 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an AppliedBuild message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof botCraft.AppliedBuild
+         * @static
+         * @param {botCraft.AppliedBuild} message AppliedBuild
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        AppliedBuild.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.builderId = 0;
+                object.targetId = 0;
+            }
+            if (message.builderId != null && message.hasOwnProperty("builderId"))
+                object.builderId = message.builderId;
+            if (message.targetId != null && message.hasOwnProperty("targetId"))
+                object.targetId = message.targetId;
+            return object;
+        };
+
+        /**
+         * Converts this AppliedBuild to JSON.
+         * @function toJSON
+         * @memberof botCraft.AppliedBuild
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        AppliedBuild.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        return AppliedBuild;
     })();
 
     return botCraft;

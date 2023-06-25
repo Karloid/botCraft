@@ -4,11 +4,11 @@ import {Controller, GUI} from 'three/examples/jsm/libs/lil-gui.module.min'
 import {Font, FontLoader} from "three/examples/jsm/loaders/FontLoader"
 import fontJson from './assets/Roboto_Regular.json'
 import {botCraft} from "./proto/botCraft"
+
+import image from "./assets/icons/huski.png"
 import State = botCraft.State;
 import Options = botCraft.Options;
 import EntityType = botCraft.EntityType;
-
-import image from "./assets/icons/huski.png"
 
 type GamesDataActionV1 = {
     data: number[]
@@ -44,7 +44,7 @@ type GamesDataGameV1 = {
 
 interface NumberMap {
     [key: string]: number
-  }
+}
 
 const gridColor = 0xffffff
 const gridLineWidth = 1
@@ -55,6 +55,7 @@ const IDToUnitColor: NumberMap = {
     "-1": 0x00ff00,
 }
 // TODO:
+
 // 1. add health decreasing
 export class Player {
     private readonly container: HTMLElement
@@ -79,11 +80,11 @@ export class Player {
         console.log("---constructor---")
         this.container = container
         container.style.height = (container.clientWidth / 2).toString().concat('px')
-        
+
         this.options = Options.decode(Uint8Array.from(window.atob(gameData.options), (v) => v.charCodeAt(0)));
 
         console.log("---options---", this.options)
-        
+
         this.options.entityProperties.forEach((entity, i) => {
             console.log("entity: entityType=", entity.entityType, EntityType[entity.entityType], "maxHealth=", entity.maxHealth, "...")
         })
@@ -106,8 +107,8 @@ export class Player {
         this.scene = new THREE.Scene()
 
         this.camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.offsetHeight, 1, 1000)
-        this.camera.position.set(mapSize/2, mapSize/2, 30)
-        this.camera.lookAt(mapSize/2, mapSize/2, 0)
+        this.camera.position.set(mapSize / 2, mapSize / 2, 30)
+        this.camera.lookAt(mapSize / 2, mapSize / 2, 0)
 
         this.renderer = new THREE.WebGLRenderer({antialias: true})
         this.renderer.setSize(container.clientWidth, container.offsetHeight)
@@ -119,6 +120,19 @@ export class Player {
 
         this.initScene()
         this.initGUI()
+    }
+
+    private getSizeFor(entityType: botCraft.EntityType) {
+        let result = 0;
+        this.options.entityProperties.forEach((properties, i) => {
+                if (properties.entityType === entityType) {
+                    result = properties.size
+                    return
+                }
+            }
+        )
+
+        return result // TODO rise error?
     }
 
     private initScene() {
@@ -161,27 +175,27 @@ export class Player {
         endCoordinateXText.position.x = mapSize - 1
         endCoordinateXText.position.y = -1
         endCoordinateYText.position.x = -2
-        endCoordinateYText.position.y = mapSize -1
+        endCoordinateYText.position.y = mapSize - 1
 
         // gridHelper
         const size = mapSize;
         const divisions = mapSize;
-        const material = new THREE.LineBasicMaterial( {
+        const material = new THREE.LineBasicMaterial({
             color: gridColor,
             linewidth: gridLineWidth,
             linecap: 'round', //ignored by WebGLRenderer
-            linejoin:  'round' //ignored by WebGLRenderer
-        } );
+            linejoin: 'round' //ignored by WebGLRenderer
+        });
 
-        const gridHelper = new THREE.GridHelper( size, divisions, 0xffff00);
+        const gridHelper = new THREE.GridHelper(size, divisions, 0xffff00);
         gridHelper.material = material; // TODO: uncomment to expose real grid
         gridHelper.rotation.x += Math.PI / 2;
-        gridHelper.position.y = mapSize/2;
-        gridHelper.position.x = mapSize/2;
-        this.scene.add( gridHelper );
-        this.scene.add( startCoordinateText );
-        this.scene.add( endCoordinateXText );
-        this.scene.add( endCoordinateYText );
+        gridHelper.position.y = mapSize / 2;
+        gridHelper.position.x = mapSize / 2;
+        this.scene.add(gridHelper);
+        this.scene.add(startCoordinateText);
+        this.scene.add(endCoordinateXText);
+        this.scene.add(endCoordinateYText);
 
         /*   this.ticks[this.ticks.length - 1].field.forEach((cell, i) => {
                const piece = this.newPiece()
@@ -386,29 +400,30 @@ export class Player {
     private createUnits(state: State) {
         // const entities = state.entities
         state.entities.forEach((entity) => {
-            const unitSize: number = this.options.entityProperties[entity.entityType].size
+            const unitSize: number = this.getSizeFor(entity.entityType)
+
             const playerId: number = entity.playerId
             const unitColor = IDToUnitColor[playerId]
 
             const coords = this.findCoords(entity.position.x || 0, entity.position.y || 0, unitSize)
-            const geometry = new THREE.PlaneGeometry( unitSize - geometryOffset, unitSize - geometryOffset );
+            const geometry = new THREE.PlaneGeometry(unitSize - geometryOffset, unitSize - geometryOffset);
 
-            const texture = new THREE.TextureLoader().load( image );
-            const textureMaterial = new THREE.MeshBasicMaterial( { map: texture, transparent: true } );
-            const colorMaterial = new THREE.MeshBasicMaterial( { color: unitColor } );
+            const texture = new THREE.TextureLoader().load(image);
+            const textureMaterial = new THREE.MeshBasicMaterial({map: texture, transparent: true});
+            const colorMaterial = new THREE.MeshBasicMaterial({color: unitColor});
 
-            const icon = new THREE.Mesh( geometry, textureMaterial );
-            const plane = new THREE.Mesh( geometry, colorMaterial );
+            const icon = new THREE.Mesh(geometry, textureMaterial);
+            const plane = new THREE.Mesh(geometry, colorMaterial);
 
             plane.position.x = coords.x
             plane.position.y = coords.y
             plane.renderOrder = 1
-            this.scene.add( plane );
+            this.scene.add(plane);
 
             icon.position.x = coords.x
             icon.position.y = coords.y
             icon.renderOrder = 2
-            this.scene.add( icon );
+            this.scene.add(icon);
 
             // const edges = new THREE.EdgesGeometry( plane.geometry ); 
             // const lines = new THREE.LineSegments(edges, new THREE.LineBasicMaterial( { color: 0xffffff } ) ); 
