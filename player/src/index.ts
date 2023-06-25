@@ -75,6 +75,7 @@ export class Player {
     private readonly font: Font
     private pieces: { [key: number]: THREE.Mesh } = {}
     private curUserPointer: THREE.Mesh
+    private tickObjects: any[] = [];
 
     constructor(container: HTMLElement, gameData: GamesDataGameV1) {
         console.log("---constructor---")
@@ -228,19 +229,19 @@ export class Player {
         // })
 
         // TODO: comment below
-        const sphereGeometry = new THREE.SphereGeometry(6, 32, 32)
-        const sphereMaterial = new THREE.MeshPhongMaterial({
-            color: 0x0000bb,
-            flatShading: true,
-            emissive: 0x0000ff,
-            emissiveIntensity: 5,
-        })
-        const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial)
-        sphere.position.setX(23)
-        sphere.visible = false
-        this.curUserPointer = sphere
-        this.scene.add(sphere)
-
+        /*  const sphereGeometry = new THREE.SphereGeometry(6, 32, 32)
+          const sphereMaterial = new THREE.MeshPhongMaterial({
+              color: 0x0000bb,
+              flatShading: true,
+              emissive: 0x0000ff,
+              emissiveIntensity: 5,
+          })
+          const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial)
+          sphere.position.setX(23)
+          sphere.visible = false
+          this.curUserPointer = sphere
+          this.scene.add(sphere)
+  */
         // this.scene.rotateX(Math.PI / 2)
 
         this.animate()
@@ -293,7 +294,7 @@ export class Player {
         curTickCtrl = panel.add(this.settings, 'curTick', 0, this.ticks.length - 1, 1)
             .name('Current tick')
             .listen()
-            .onChange(() => {
+            .onChange((state: botCraft.State) => {
 
                 // const geometry = new THREE.PlaneGeometry( 1, 1 );
                 // const material = new THREE.MeshBasicMaterial( {color: 0xff0000, side: THREE.DoubleSide} );
@@ -306,9 +307,10 @@ export class Player {
 
                 const curTick: number = this.settings.curTick
                 const curState: State = this.ticks[curTick]
+                const nextState: State = curTick + 1 < this.ticks.length ? this.ticks[curTick + 1] : null
 
                 // this.scene.clear()
-                this.createUnits(curState)
+                this.createUnits(curState, nextState)
 
                 /*
                                 this.ticks[this.settings.curTick].field.forEach((cell, i) => {
@@ -337,16 +339,16 @@ export class Player {
                 */
 
 
-                if (this.settings.curTick == 0) {
-                    this.curUserPointer.visible = false
-                } else {
-                    this.curUserPointer.visible = true
-                    /*
-                                        this.curUserPointer.position.z = this.ticks[this.settings.curTick-1].curUser == 0
-                                            ? -26
-                                            : 15
-                    */
-                }
+                /*   if (this.settings.curTick == 0) {
+                       this.curUserPointer.visible = false
+                   } else {
+                       this.curUserPointer.visible = true
+                       /!*
+                                           this.curUserPointer.position.z = this.ticks[this.settings.curTick-1].curUser == 0
+                                               ? -26
+                                               : 15
+                       *!/
+                   }*/
             }).setValue(0)
 
         playBtn = panel.add(this.settings, 'play')
@@ -397,10 +399,28 @@ export class Player {
         return {x, y}
     }
 
-    private createUnits(state: State) {
-        // const entities = state.entities
+    private createUnits(state: State, nextState: State) {
+        if (!nextState == null) {
+            nextState.appliedAttacks   // TODO handle
+            nextState.appliedRepairs   // TODO handle
+            nextState.appliedBuilds    // TODO handle
+        }
+        // TODO move Object3D instead
+        this.tickObjects.forEach((obj) => {
+            this.scene.remove(obj)
+        })
+        this.tickObjects = []
+
+
+        const texture = new THREE.TextureLoader().load(image);
+        texture.minFilter = THREE.NearestFilter;
+        texture.magFilter = THREE.NearestFilter;
+        const textureMaterial = new THREE.MeshBasicMaterial({map: texture, transparent: true});
+
         state.entities.forEach((entity) => {
             const unitSize: number = this.getSizeFor(entity.entityType)
+
+            entity.active
 
             const playerId: number = entity.playerId
             const unitColor = IDToUnitColor[playerId]
@@ -408,8 +428,6 @@ export class Player {
             const coords = this.findCoords(entity.position.x || 0, entity.position.y || 0, unitSize)
             const geometry = new THREE.PlaneGeometry(unitSize - geometryOffset, unitSize - geometryOffset);
 
-            const texture = new THREE.TextureLoader().load(image);
-            const textureMaterial = new THREE.MeshBasicMaterial({map: texture, transparent: true});
             const colorMaterial = new THREE.MeshBasicMaterial({color: unitColor});
 
             const icon = new THREE.Mesh(geometry, textureMaterial);
@@ -431,6 +449,9 @@ export class Player {
             // lines.position.x = coords.y
             // lines.position.y = coords.x
             // this.scene.add(lines)
+
+            this.tickObjects.push(plane)
+            this.tickObjects.push(icon)
         })
     }
 
