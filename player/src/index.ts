@@ -8,6 +8,8 @@ import State = botCraft.State;
 import Options = botCraft.Options;
 import EntityType = botCraft.EntityType;
 
+import image from "./assets/icons/huski.png"
+
 type GamesDataActionV1 = {
     data: number[]
     user: number
@@ -40,6 +42,20 @@ type GamesDataGameV1 = {
     ticks: GamesDataTickV1[]
 }
 
+interface NumberMap {
+    [key: string]: number
+  }
+
+const gridColor = 0xffffff
+const gridLineWidth = 1
+const geometryOffset = 0.2
+const IDToUnitColor: NumberMap = {
+    "0": 0x0000ff,
+    "1": 0xff0000,
+    "-1": 0x00ff00,
+}
+// TODO:
+// 1. add health decreasing
 export class Player {
     private readonly container: HTMLElement
     private readonly options: Options
@@ -60,20 +76,26 @@ export class Player {
     private curUserPointer: THREE.Mesh
 
     constructor(container: HTMLElement, gameData: GamesDataGameV1) {
-        console.log("Hello world")
+        console.log("---constructor---")
         this.container = container
         container.style.height = (container.clientWidth / 2).toString().concat('px')
-
+        
         this.options = Options.decode(Uint8Array.from(window.atob(gameData.options), (v) => v.charCodeAt(0)));
 
+        console.log("---options---", this.options)
+        
         this.options.entityProperties.forEach((entity, i) => {
             console.log("entity: entityType=", entity.entityType, EntityType[entity.entityType], "maxHealth=", entity.maxHealth, "...")
         })
-        console.log("options: mapSize=", this.options.mapSize,)
+        const mapSize = this.options.mapSize
+        console.log("options: mapSize=", mapSize,)
 
         this.ticks = gameData.ticks.map(t => {
             return State.decode(Uint8Array.from(window.atob(t.state), (v) => v.charCodeAt(0)))
         })
+
+        console.log("---ticks---", this.ticks)
+
         this.ticks.forEach((tick, i) => {
             console.log("tick: tick=", i, "tickId=", tick.tick, "entityCount=", tick.entities.length)
         })
@@ -84,8 +106,8 @@ export class Player {
         this.scene = new THREE.Scene()
 
         this.camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.offsetHeight, 1, 1000)
-        this.camera.position.set(0, 0, 200)
-        this.camera.lookAt(0, 0, 0)
+        this.camera.position.set(mapSize/2, mapSize/2, 30)
+        this.camera.lookAt(mapSize/2, mapSize/2, 0)
 
         this.renderer = new THREE.WebGLRenderer({antialias: true})
         this.renderer.setSize(container.clientWidth, container.offsetHeight)
@@ -100,32 +122,66 @@ export class Player {
     }
 
     private initScene() {
-
+        console.log("---initScene---")
         this.scene.add(new THREE.AmbientLight(0xffffff, 0.4))
 
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6)
         directionalLight.position.set(0.75, 0.75, 0).normalize()
         this.scene.add(directionalLight)
 
-        const gridGeometry = new THREE.BufferGeometry().setFromPoints([
-            new THREE.Vector3(-1, 0, 1), new THREE.Vector3(1, 0, 1),
-            new THREE.Vector3(-1, 0, 0.33), new THREE.Vector3(1, 0, 0.33),
-            new THREE.Vector3(-1, 0, -0.33), new THREE.Vector3(1, 0, -0.33),
-            new THREE.Vector3(-1, 0, -1), new THREE.Vector3(1, 0, -1),
+        // const gridGeometry = new THREE.BufferGeometry().setFromPoints([
+        //     new THREE.Vector3(-1, 0, 1), new THREE.Vector3(1, 0, 1),
+        //     new THREE.Vector3(-1, 0, 0.33), new THREE.Vector3(1, 0, 0.33),
+        //     new THREE.Vector3(-1, 0, -0.33), new THREE.Vector3(1, 0, -0.33),
+        //     new THREE.Vector3(-1, 0, -1), new THREE.Vector3(1, 0, -1),
 
-            new THREE.Vector3(-1, 0, 1), new THREE.Vector3(-1, 0, -1),
-            new THREE.Vector3(-0.5, 0, 1), new THREE.Vector3(-0.5, 0, -1),
-            new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, -1),
-            new THREE.Vector3(0.5, 0, 1), new THREE.Vector3(0.5, 0, -1),
-            new THREE.Vector3(1, 0, 1), new THREE.Vector3(1, 0, -1),
-            new THREE.Vector3(0, 0, 0), new THREE.Vector3(1, 0, 1),
-        ])
+        //     new THREE.Vector3(-1, 0, 1), new THREE.Vector3(-1, 0, -1),
+        //     new THREE.Vector3(-0.5, 0, 1), new THREE.Vector3(-0.5, 0, -1),
+        //     new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, -1),
+        //     new THREE.Vector3(0.5, 0, 1), new THREE.Vector3(0.5, 0, -1),
+        //     new THREE.Vector3(1, 0, 1), new THREE.Vector3(1, 0, -1),
+        //     new THREE.Vector3(0, 0, 0), new THREE.Vector3(1, 0, 1),
+        // ])
 
-        const gridMaterial = new THREE.LineBasicMaterial({color: 0x888888})
-        const lines = new THREE.LineSegments(gridGeometry, gridMaterial)
-        lines.scale.set(75, 50, 50)
-        lines.translateX(-75)
-        this.scene.add(lines)
+        // const gridMaterial = new THREE.LineBasicMaterial({color: 0x888888})
+        // const lines = new THREE.LineSegments(gridGeometry, gridMaterial)
+        // lines.scale.set(75, 50, 50)
+        // lines.translateX(-75)
+        // this.scene.add(lines)
+
+
+        const mapSize = this.options.mapSize
+
+        const startCoordinateText = this.createHelperText("0", 1)
+        const endCoordinateXText = this.createHelperText(String(mapSize - 1), 1)
+        const endCoordinateYText = this.createHelperText(String(mapSize - 1), 1)
+        // const startCoordinateText = this.createHelperText("0", 1)
+        startCoordinateText.position.x = -1
+        startCoordinateText.position.y = -1
+        endCoordinateXText.position.x = mapSize - 1
+        endCoordinateXText.position.y = -1
+        endCoordinateYText.position.x = -2
+        endCoordinateYText.position.y = mapSize -1
+
+        // gridHelper
+        const size = mapSize;
+        const divisions = mapSize;
+        const material = new THREE.LineBasicMaterial( {
+            color: gridColor,
+            linewidth: gridLineWidth,
+            linecap: 'round', //ignored by WebGLRenderer
+            linejoin:  'round' //ignored by WebGLRenderer
+        } );
+
+        const gridHelper = new THREE.GridHelper( size, divisions, 0xffff00);
+        gridHelper.material = material; // TODO: uncomment to expose real grid
+        gridHelper.rotation.x += Math.PI / 2;
+        gridHelper.position.y = mapSize/2;
+        gridHelper.position.x = mapSize/2;
+        this.scene.add( gridHelper );
+        this.scene.add( startCoordinateText );
+        this.scene.add( endCoordinateXText );
+        this.scene.add( endCoordinateYText );
 
         /*   this.ticks[this.ticks.length - 1].field.forEach((cell, i) => {
                const piece = this.newPiece()
@@ -134,28 +190,30 @@ export class Player {
                this.pieces[i] = piece
            })*/
 
-        this.participants.forEach((p, i) => {
-            console.log("participants forEach world=", p, i)
-            const t = this.newText(
-                p.user.name || p.user.gh_login,
-                this.winner > 0 && i + 1 == this.winner
-                    ? [
-                        new THREE.MeshPhongMaterial({color: 0x009900, flatShading: true}), // front
-                        new THREE.MeshPhongMaterial({color: 0x008800}) // side
-                    ]
-                    : this.winner > 0 && i + 1 != this.winner
-                        ? [
-                            new THREE.MeshPhongMaterial({color: 0xBB0000, flatShading: true}), // front
-                            new THREE.MeshPhongMaterial({color: 0x880000}) // side
-                        ]
-                        : this.lettersMaterial
-            )
-            t.geometry.computeBoundingBox()
-            t.rotateX(-Math.PI / 2)
-            t.position.set(30, 0, i ? 20 : -20)
-            this.scene.add(t)
-        })
+        // TODO:
+        // this.participants.forEach((p, i) => {
+        //     console.log("participants forEach world=", p, i)
+        //     const t = this.newText(
+        //         p.user.name || p.user.gh_login,
+        //         this.winner > 0 && i + 1 == this.winner
+        //             ? [
+        //                 new THREE.MeshPhongMaterial({color: 0x009900, flatShading: true}), // front
+        //                 new THREE.MeshPhongMaterial({color: 0x008800}) // side
+        //             ]
+        //             : this.winner > 0 && i + 1 != this.winner
+        //                 ? [
+        //                     new THREE.MeshPhongMaterial({color: 0xBB0000, flatShading: true}), // front
+        //                     new THREE.MeshPhongMaterial({color: 0x880000}) // side
+        //                 ]
+        //                 : this.lettersMaterial
+        //     )
+        //     t.geometry.computeBoundingBox()
+        //     t.rotateX(-Math.PI / 2)
+        //     t.position.set(30, 0, i ? 20 : -20)
+        //     this.scene.add(t)
+        // })
 
+        // TODO: comment below
         const sphereGeometry = new THREE.SphereGeometry(6, 32, 32)
         const sphereMaterial = new THREE.MeshPhongMaterial({
             color: 0x0000bb,
@@ -169,7 +227,7 @@ export class Player {
         this.curUserPointer = sphere
         this.scene.add(sphere)
 
-        this.scene.rotateX(Math.PI / 2)
+        // this.scene.rotateX(Math.PI / 2)
 
         this.animate()
     }
@@ -216,10 +274,28 @@ export class Player {
             width: this.container.clientWidth,
             autoPlace: true
         })
+
+        // const coords = {x: 0, y: 0}
         curTickCtrl = panel.add(this.settings, 'curTick', 0, this.ticks.length - 1, 1)
             .name('Current tick')
             .listen()
             .onChange(() => {
+
+                // const geometry = new THREE.PlaneGeometry( 1, 1 );
+                // const material = new THREE.MeshBasicMaterial( {color: 0xff0000, side: THREE.DoubleSide} );
+                // const plane = new THREE.Mesh( geometry, material );
+                // plane.position.x = coords.x
+                // plane.position.y = coords.y
+                // this.scene.add( plane );
+                // coords.x += 1
+                // coords.y += 1
+
+                const curTick: number = this.settings.curTick
+                const curState: State = this.ticks[curTick]
+
+                // this.scene.clear()
+                this.createUnits(curState)
+
                 /*
                                 this.ticks[this.settings.curTick].field.forEach((cell, i) => {
                                     const piece = this.pieces[i]
@@ -245,6 +321,7 @@ export class Player {
                                     }
                                 })
                 */
+
 
                 if (this.settings.curTick == 0) {
                     this.curUserPointer.visible = false
@@ -279,7 +356,7 @@ export class Player {
             this.animate()
         })
 
-        const delta = this.clock.getDelta()
+        // const delta = this.clock.getDelta()
 
         this.renderer.render(this.scene, this.camera)
     }
@@ -289,20 +366,73 @@ export class Player {
         new THREE.MeshPhongMaterial({color: 0x888888}) // side
     ]
 
-    private newText(text: string, material: Array<THREE.MeshPhongMaterial> = this.lettersMaterial) {
+    private createHelperText(text: string, size: number) {
         return new THREE.Mesh(
             new TextGeometry(text, {
                 font: this.font,
-                size: 11,
-                height: 4,
-                curveSegments: 40,
-                bevelThickness: 0.5,
-                bevelSize: 0.1,
-                bevelEnabled: true
+                size: size,
+                height: 0,
             }),
-            material
         )
     }
+
+    private findCoords(init_x: number, init_y: number, unitSize: number) {
+        const mapSize = this.options.mapSize
+        const x = init_x + unitSize / 2
+        const y = mapSize - (init_y + unitSize / 2)
+        return {x, y}
+    }
+
+    private createUnits(state: State) {
+        // const entities = state.entities
+        state.entities.forEach((entity) => {
+            const unitSize: number = this.options.entityProperties[entity.entityType].size
+            const playerId: number = entity.playerId
+            const unitColor = IDToUnitColor[playerId]
+
+            const coords = this.findCoords(entity.position.x || 0, entity.position.y || 0, unitSize)
+            const geometry = new THREE.PlaneGeometry( unitSize - geometryOffset, unitSize - geometryOffset );
+
+            const texture = new THREE.TextureLoader().load( image );
+            const textureMaterial = new THREE.MeshBasicMaterial( { map: texture, transparent: true } );
+            const colorMaterial = new THREE.MeshBasicMaterial( { color: unitColor } );
+
+            const icon = new THREE.Mesh( geometry, textureMaterial );
+            const plane = new THREE.Mesh( geometry, colorMaterial );
+
+            plane.position.x = coords.x
+            plane.position.y = coords.y
+            plane.renderOrder = 1
+            this.scene.add( plane );
+
+            icon.position.x = coords.x
+            icon.position.y = coords.y
+            icon.renderOrder = 2
+            this.scene.add( icon );
+
+            // const edges = new THREE.EdgesGeometry( plane.geometry ); 
+            // const lines = new THREE.LineSegments(edges, new THREE.LineBasicMaterial( { color: 0xffffff } ) ); 
+
+            // lines.position.x = coords.y
+            // lines.position.y = coords.x
+            // this.scene.add(lines)
+        })
+    }
+
+    // private newText(text: string, material: Array<THREE.MeshPhongMaterial> = this.lettersMaterial) {
+    //     return new THREE.Mesh(
+    //         new TextGeometry(text, {
+    //             font: this.font,
+    //             size: 11,
+    //             height: 4,
+    //             curveSegments: 40,
+    //             bevelThickness: 0.5,
+    //             bevelSize: 0.1,
+    //             bevelEnabled: true
+    //         }),
+    //         material
+    //     )
+    // }
 
     private piecesMaterials = {
         Green: new THREE.MeshPhongMaterial({color: 0x00ff00, flatShading: true}),
