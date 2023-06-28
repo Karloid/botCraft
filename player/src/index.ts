@@ -107,7 +107,7 @@ export class Player {
 
         this.scene = new THREE.Scene()
 
-        this.camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.offsetHeight, 1, 1000)
+        this.camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.offsetHeight, 1, 1000)
         this.camera.position.set(mapSize / 2, mapSize / 2, 30)
         this.camera.lookAt(mapSize / 2, mapSize / 2, 0)
 
@@ -310,7 +310,7 @@ export class Player {
                 const nextState: State = curTick + 1 < this.ticks.length ? this.ticks[curTick + 1] : null
 
                 // this.scene.clear()
-                this.createUnits(curState, nextState)
+                this.generateObjects(curState, nextState)
 
                 /*
                                 this.ticks[this.settings.curTick].field.forEach((cell, i) => {
@@ -399,59 +399,71 @@ export class Player {
         return {x, y}
     }
 
-    private createUnits(state: State, nextState: State) {
+    private generateObjects(state: State, nextState: State) {
         if (!nextState == null) {
             nextState.appliedAttacks   // TODO handle
             nextState.appliedRepairs   // TODO handle
             nextState.appliedBuilds    // TODO handle
         }
-        // TODO move Object3D instead
-        this.tickObjects.forEach((obj) => {
-            this.scene.remove(obj)
-        })
-        this.tickObjects = []
-
 
         const texture = new THREE.TextureLoader().load(image);
         texture.minFilter = THREE.NearestFilter;
         texture.magFilter = THREE.NearestFilter;
         const textureMaterial = new THREE.MeshBasicMaterial({map: texture, transparent: true});
 
+        this.tickObjects.forEach((object) => {
+            const objectIndex = this.tickObjects.indexOf(object)
+            if (!state.entities.some(entity => entity.id === object.userData.id)) {
+                this.tickObjects.splice(objectIndex, 1)
+                this.scene.remove(object)
+            } 
+        })
+
         state.entities.forEach((entity) => {
-            const unitSize: number = this.getSizeFor(entity.entityType)
+            const objectIndex = this.tickObjects.findIndex(obj => obj.userData.id === entity.id)
+            let object = this.tickObjects[objectIndex] || null
+            if (object) {
+                object.userData = entity
+                const unitSize: number = this.getSizeFor(entity.entityType)
+                const coords = this.findCoords(entity.position.x || 0, entity.position.y || 0, unitSize)
+                object.position.x = coords.x
+                object.position.y = coords.y
+            } else {
+                // entity.active
+                // TODO: size  have to consider health
+                const unitSize: number = this.getSizeFor(entity.entityType)
 
-            entity.active
+                const playerId: number = entity.playerId
+                const unitColor = IDToUnitColor[playerId]
 
-            const playerId: number = entity.playerId
-            const unitColor = IDToUnitColor[playerId]
+                const geometry = new THREE.PlaneGeometry(unitSize - geometryOffset, unitSize - geometryOffset);
 
-            const coords = this.findCoords(entity.position.x || 0, entity.position.y || 0, unitSize)
-            const geometry = new THREE.PlaneGeometry(unitSize - geometryOffset, unitSize - geometryOffset);
+                const colorMaterial = new THREE.MeshBasicMaterial({color: unitColor});
 
-            const colorMaterial = new THREE.MeshBasicMaterial({color: unitColor});
+                const icon = new THREE.Mesh(geometry, textureMaterial);
+                const plane = new THREE.Mesh(geometry, colorMaterial);
 
-            const icon = new THREE.Mesh(geometry, textureMaterial);
-            const plane = new THREE.Mesh(geometry, colorMaterial);
+                const coords = this.findCoords(entity.position.x || 0, entity.position.y || 0, unitSize)
 
-            plane.position.x = coords.x
-            plane.position.y = coords.y
-            plane.renderOrder = 1
-            this.scene.add(plane);
+                object = new THREE.Object3D()
+                object.userData = entity
+                object.add(plane)
+                object.add(icon)
 
-            icon.position.x = coords.x
-            icon.position.y = coords.y
-            icon.renderOrder = 2
-            this.scene.add(icon);
+                object.position.x = coords.x
+                object.position.y = coords.y
 
-            // const edges = new THREE.EdgesGeometry( plane.geometry ); 
-            // const lines = new THREE.LineSegments(edges, new THREE.LineBasicMaterial( { color: 0xffffff } ) ); 
+                this.scene.add(object)
+                this.tickObjects.push(object)
 
-            // lines.position.x = coords.y
-            // lines.position.y = coords.x
-            // this.scene.add(lines)
+                // const edges = new THREE.EdgesGeometry( plane.geometry ); 
+                // const lines = new THREE.LineSegments(edges, new THREE.LineBasicMaterial( { color: 0xffffff } ) ); 
 
-            this.tickObjects.push(plane)
-            this.tickObjects.push(icon)
+                // lines.position.x = coords.y
+                // lines.position.y = coords.x
+                // this.scene.add(lines)
+            }
+
         })
     }
 
