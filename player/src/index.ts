@@ -96,11 +96,11 @@ export class Player {
             return State.decode(Uint8Array.from(window.atob(t.state), (v) => v.charCodeAt(0)))
         })
 
-        console.log("---ticks---", this.ticks)
+        // console.log("---ticks---", this.ticks)
 
-        this.ticks.forEach((tick, i) => {
-            console.log("tick: tick=", i, "tickId=", tick.tick, "entityCount=", tick.entities.length)
-        })
+        // this.ticks.forEach((tick, i) => {
+        //     console.log("tick: tick=", i, "tickId=", tick.tick, "entityCount=", tick.entities.length)
+        // })
 
         this.participants = gameData.participants
         this.winner = gameData.winner
@@ -395,6 +395,7 @@ export class Player {
     
 
     private getSizeFor(entityType: botCraft.EntityType) {
+        // TODO: stange for bildings (big=>small=>big)
         let result = 0;
         this.options.entityProperties.forEach((properties) => {
             if (properties.entityType === entityType) {
@@ -407,7 +408,7 @@ export class Player {
     }
 
     private getScale(entityType: botCraft.EntityType, currentHealth: number) {
-        let maxHealth = 100
+        let maxHealth = currentHealth
         this.options.entityProperties.forEach((properties) => {
             if (properties.entityType === entityType) {
                 maxHealth = properties.maxHealth;
@@ -416,6 +417,17 @@ export class Player {
         });
         const scale = Math.round(currentHealth / maxHealth);
         return scale >= 0.5 ? scale : 0.5;
+    }
+
+    private setOpacity(object: THREE.Object3D, isActive: boolean) {
+        const opacity = isActive ? 1 : 0.5
+
+        object.children.forEach((child: THREE.Mesh) => {
+            if (child.material as THREE.Material) {
+                const material: THREE.Material = child.material as THREE.Material
+                material.opacity = opacity
+            }
+        })
     }
 
     private generateObjects(state: State, nextState: State) {
@@ -443,16 +455,19 @@ export class Player {
             let object = this.tickObjects[objectIndex] || null;
             if (object) {
                 object.userData = entity;
+
                 const scale = this.getScale(object.userData.entityType, object.userData.health);
                 object.scale.x = scale;
                 object.scale.y = scale;
+
                 const coords = this.findCoords(
                     entity.position.x || 0, entity.position.y || 0, entity.entityType,
                 );
                 object.position.x = coords.x;
                 object.position.y = coords.y;
+                
+                this.setOpacity(object, entity.active)
             } else {
-                // entity.active
                 const unitSize: number = this.getSizeFor(entity.entityType);
 
                 const playerId: number = entity.playerId;
@@ -473,12 +488,15 @@ export class Player {
                 )
 
                 object = new THREE.Object3D();
+
                 object.userData = entity;
                 object.add(plane);
                 object.add(icon);
 
                 object.position.x = coords.x;
                 object.position.y = coords.y;
+
+                this.setOpacity(object, entity.active)
 
                 this.scene.add(object);
                 this.tickObjects.push(object);
