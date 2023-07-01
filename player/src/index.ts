@@ -123,19 +123,6 @@ export class Player {
         this.initGUI()
     }
 
-    private getSizeFor(entityType: botCraft.EntityType) {
-        let result = 0;
-        this.options.entityProperties.forEach((properties, i) => {
-                if (properties.entityType === entityType) {
-                    result = properties.size
-                    return
-                }
-            }
-        )
-
-        return result // TODO rise error?
-    }
-
     private initScene() {
         console.log("---initScene---")
         this.scene.add(new THREE.AmbientLight(0xffffff, 0.4))
@@ -392,11 +379,43 @@ export class Player {
         )
     }
 
-    private findCoords(init_x: number, init_y: number, unitSize: number) {
+    private findCoords(init_x: number, init_y: number, entityType: botCraft.EntityType) {
+        let unitSize = 0
+        this.options.entityProperties.forEach((properties) => {
+            if (properties.entityType === entityType) {
+                unitSize = properties.size
+                return
+            }
+        })
         const mapSize = this.options.mapSize
         const x = init_x + unitSize / 2
         const y = mapSize - (init_y + unitSize / 2)
         return {x, y}
+    }
+    
+
+    private getSizeFor(entityType: botCraft.EntityType) {
+        let result = 0;
+        this.options.entityProperties.forEach((properties) => {
+            if (properties.entityType === entityType) {
+                result = properties.size;
+                return;
+            }
+        });
+        
+        return result; // TODO rise error?
+    }
+
+    private getScale(entityType: botCraft.EntityType, currentHealth: number) {
+        let maxHealth = 100
+        this.options.entityProperties.forEach((properties) => {
+            if (properties.entityType === entityType) {
+                maxHealth = properties.maxHealth;
+                return;
+            }
+        });
+        const scale = Math.round(currentHealth / maxHealth);
+        return scale >= 0.5 ? scale : 0.5;
     }
 
     private generateObjects(state: State, nextState: State) {
@@ -412,49 +431,57 @@ export class Player {
         const textureMaterial = new THREE.MeshBasicMaterial({map: texture, transparent: true});
 
         this.tickObjects.forEach((object) => {
-            const objectIndex = this.tickObjects.indexOf(object)
+            const objectIndex = this.tickObjects.indexOf(object);
             if (!state.entities.some(entity => entity.id === object.userData.id)) {
-                this.tickObjects.splice(objectIndex, 1)
-                this.scene.remove(object)
+                this.tickObjects.splice(objectIndex, 1);
+                this.scene.remove(object);
             } 
         })
 
         state.entities.forEach((entity) => {
             const objectIndex = this.tickObjects.findIndex(obj => obj.userData.id === entity.id)
-            let object = this.tickObjects[objectIndex] || null
+            let object = this.tickObjects[objectIndex] || null;
             if (object) {
-                object.userData = entity
-                const unitSize: number = this.getSizeFor(entity.entityType)
-                const coords = this.findCoords(entity.position.x || 0, entity.position.y || 0, unitSize)
-                object.position.x = coords.x
-                object.position.y = coords.y
+                object.userData = entity;
+                const scale = this.getScale(object.userData.entityType, object.userData.health);
+                object.scale.x = scale;
+                object.scale.y = scale;
+                const coords = this.findCoords(
+                    entity.position.x || 0, entity.position.y || 0, entity.entityType,
+                );
+                object.position.x = coords.x;
+                object.position.y = coords.y;
             } else {
                 // entity.active
-                // TODO: size  have to consider health
-                const unitSize: number = this.getSizeFor(entity.entityType)
+                const unitSize: number = this.getSizeFor(entity.entityType);
 
-                const playerId: number = entity.playerId
-                const unitColor = IDToUnitColor[playerId]
+                const playerId: number = entity.playerId;
+                const unitColor = IDToUnitColor[playerId];
 
-                const geometry = new THREE.PlaneGeometry(unitSize - geometryOffset, unitSize - geometryOffset);
+                const geometry = new THREE.PlaneGeometry(
+                    unitSize - geometryOffset,
+                    unitSize - geometryOffset,
+                );
 
                 const colorMaterial = new THREE.MeshBasicMaterial({color: unitColor});
 
                 const icon = new THREE.Mesh(geometry, textureMaterial);
                 const plane = new THREE.Mesh(geometry, colorMaterial);
 
-                const coords = this.findCoords(entity.position.x || 0, entity.position.y || 0, unitSize)
+                const coords = this.findCoords(
+                    entity.position.x || 0, entity.position.y || 0, entity.entityType,
+                )
 
-                object = new THREE.Object3D()
-                object.userData = entity
-                object.add(plane)
-                object.add(icon)
+                object = new THREE.Object3D();
+                object.userData = entity;
+                object.add(plane);
+                object.add(icon);
 
-                object.position.x = coords.x
-                object.position.y = coords.y
+                object.position.x = coords.x;
+                object.position.y = coords.y;
 
-                this.scene.add(object)
-                this.tickObjects.push(object)
+                this.scene.add(object);
+                this.tickObjects.push(object);
 
                 // const edges = new THREE.EdgesGeometry( plane.geometry ); 
                 // const lines = new THREE.LineSegments(edges, new THREE.LineBasicMaterial( { color: 0xffffff } ) ); 
