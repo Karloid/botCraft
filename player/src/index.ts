@@ -415,8 +415,7 @@ export class Player {
                 return;
             }
         });
-        const scale = Math.round(currentHealth / maxHealth);
-        return scale >= 0.5 ? scale : 0.5;
+        return Number((currentHealth / maxHealth).toFixed(3));
     }
 
     private setOpacity(object: THREE.Object3D, isActive: boolean) {
