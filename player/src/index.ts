@@ -395,7 +395,7 @@ export class Player {
     
 
     private getSizeFor(entityType: botCraft.EntityType) {
-        // TODO: stange for bildings (big=>small=>big)
+        // TODO: strange for buildings (big=>small=>big)
         let result = 0;
         this.options.entityProperties.forEach((properties) => {
             if (properties.entityType === entityType) {
@@ -450,55 +450,12 @@ export class Player {
         })
 
         state.entities.forEach((entity) => {
-            const objectIndex = this.tickObjects.findIndex(obj => obj.userData.id === entity.id)
-            let object = this.tickObjects[objectIndex] || null;
+            let object = this.tickObjects.find(obj => obj.userData.id === entity.id);
+
             if (object) {
-                object.userData = entity;
-
-                const scale = this.getScale(object.userData.entityType, object.userData.health);
-                object.scale.x = scale;
-                object.scale.y = scale;
-
-                const coords = this.findCoords(
-                    entity.position.x || 0, entity.position.y || 0, entity.entityType,
-                );
-                object.position.x = coords.x;
-                object.position.y = coords.y;
-                
-                this.setOpacity(object, entity.active)
+                this.updateObject(object, entity)
             } else {
-                const unitSize: number = this.getSizeFor(entity.entityType);
-
-                const playerId: number = entity.playerId;
-                const unitColor = IDToUnitColor[playerId];
-
-                const geometry = new THREE.PlaneGeometry(
-                    unitSize - geometryOffset,
-                    unitSize - geometryOffset,
-                );
-
-                const colorMaterial = new THREE.MeshBasicMaterial({color: unitColor});
-
-                const icon = new THREE.Mesh(geometry, textureMaterial);
-                const plane = new THREE.Mesh(geometry, colorMaterial);
-
-                const coords = this.findCoords(
-                    entity.position.x || 0, entity.position.y || 0, entity.entityType,
-                )
-
-                object = new THREE.Object3D();
-
-                object.userData = entity;
-                object.add(plane);
-                object.add(icon);
-
-                object.position.x = coords.x;
-                object.position.y = coords.y;
-
-                this.setOpacity(object, entity.active)
-
-                this.scene.add(object);
-                this.tickObjects.push(object);
+                object = this.createObject(entity, textureMaterial)
 
                 // const edges = new THREE.EdgesGeometry( plane.geometry ); 
                 // const lines = new THREE.LineSegments(edges, new THREE.LineBasicMaterial( { color: 0xffffff } ) ); 
@@ -530,6 +487,58 @@ export class Player {
         Green: new THREE.MeshPhongMaterial({color: 0x00ff00, flatShading: true}),
         Yellow: new THREE.MeshPhongMaterial({color: 0xffff00, flatShading: true}),
         Red: new THREE.MeshPhongMaterial({color: 0xff0000, flatShading: true}),
+    }
+
+    private createObject(entity: botCraft.IEntity, textureMaterial: THREE.MeshBasicMaterial) {
+        const unitSize: number = this.getSizeFor(entity.entityType)
+
+        const playerId: number = entity.playerId
+        const unitColor = IDToUnitColor[playerId]
+
+        const geometry = new THREE.PlaneGeometry(
+            unitSize - geometryOffset,
+            unitSize - geometryOffset
+        )
+
+        const colorMaterial = new THREE.MeshBasicMaterial({ color: unitColor })
+
+        const icon = new THREE.Mesh(geometry, textureMaterial)
+        const plane = new THREE.Mesh(geometry, colorMaterial)
+
+        const coords = this.findCoords(
+            entity.position.x || 0, entity.position.y || 0, entity.entityType
+        )
+        
+        const object = new THREE.Object3D()
+
+        object.userData = entity
+        object.add(plane)
+        object.add(icon)
+
+        object.position.x = coords.x
+        object.position.y = coords.y
+
+        this.setOpacity(object, entity.active)
+
+        this.scene.add(object)
+        this.tickObjects.push(object)
+        return object
+    }
+
+    private updateObject(object: THREE.Object3D, entity: botCraft.IEntity) {
+        object.userData = entity
+
+        const scale = this.getScale(object.userData.entityType, object.userData.health)
+        object.scale.x = scale
+        object.scale.y = scale
+
+        const coords = this.findCoords(
+            entity.position.x || 0, entity.position.y || 0, entity.entityType
+        )
+        object.position.x = coords.x
+        object.position.y = coords.y
+
+        this.setOpacity(object, entity.active)
     }
 
     private newPiece(): THREE.Mesh {
