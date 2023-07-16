@@ -286,7 +286,7 @@ export class Player {
                         playBtn.show()
                     }
 
-                    window.setTimeout(play, 1000)
+                    window.setTimeout(play, 200)
                 }
                 play()
             },
@@ -297,7 +297,7 @@ export class Player {
         }
 
         const panel = new GUI({
-            title: 'Semaphore',
+            title: 'BotCraft',
             container: this.container,
             width: this.container.clientWidth,
             autoPlace: true
