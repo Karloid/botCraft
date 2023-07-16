@@ -46,6 +46,21 @@ interface NumberMap {
     [key: string]: number
 }
 
+// TODO: change colors
+const attackColor = 0xff0000
+const repairColor = 0x00ff00
+const buildColor = 0x0000ff
+
+// const initActions: {
+//     attacks: Array<botCraft.AppliedAttack>,
+//     repairs: Array<botCraft.AppliedRepair>,
+//     builds: Array<botCraft.AppliedBuild>,
+// } = {
+//     attacks: [],
+//     repairs: [],
+//     builds: [],
+// }
+
 const gridColor = 0xffffff
 const gridLineWidth = 1
 const geometryOffset = 0.2
@@ -75,7 +90,18 @@ export class Player {
     private readonly font: Font
     private pieces: { [key: number]: THREE.Mesh } = {}
     private curUserPointer: THREE.Mesh
-    private tickObjects: any[] = [];
+    // private tickObjects = {};
+    private tickObjects: { [key: string]: THREE.Object3D} = {};
+    private tickActions: {
+        [key: string]: { [key: string]: THREE.Line},
+        "attacks": { [key: string]: THREE.Line},
+        "repairs":{ [key: string]: THREE.Line},
+        "builds": { [key: string]: THREE.Line},
+    } = {
+        "attacks": {},
+        "repairs": {},
+        "builds": {},
+    }
 
     constructor(container: HTMLElement, gameData: GamesDataGameV1) {
         console.log("---constructor---")
@@ -429,28 +455,38 @@ export class Player {
         })
     }
 
+    private renderAction(firstUnit: THREE.Object3D, secondUnit: THREE.Object3D, color: number, type: string) {
+        const material = new THREE.LineBasicMaterial({
+            color: color
+        });
+        const points = []
+        points.push( new THREE.Vector3( firstUnit.position.x, firstUnit.position.y, 0 ) );
+        points.push( new THREE.Vector3( secondUnit.position.x, secondUnit.position.y, 0 ) );
+        const geometry = new THREE.BufferGeometry().setFromPoints( points );
+        const action = new THREE.Line( geometry, material );
+        action.userData = {initiatorId: firstUnit.userData.id, targetId: secondUnit.userData.id}
+        this.tickActions[type][action.userData.initiatorId] = action
+        this.scene.add(action);
+    }
+
     private generateObjects(state: State, nextState: State) {
-        if (!nextState == null) {
-            nextState.appliedAttacks   // TODO handle
-            nextState.appliedRepairs   // TODO handle
-            nextState.appliedBuilds    // TODO handle
-        }
 
         const texture = new THREE.TextureLoader().load(image);
         texture.minFilter = THREE.NearestFilter;
         texture.magFilter = THREE.NearestFilter;
         const textureMaterial = new THREE.MeshBasicMaterial({map: texture, transparent: true});
 
-        this.tickObjects.forEach((object) => {
-            const objectIndex = this.tickObjects.indexOf(object);
-            if (!state.entities.some(entity => entity.id === object.userData.id)) {
-                this.tickObjects.splice(objectIndex, 1);
-                this.scene.remove(object);
-            } 
+        Object.keys(this.tickObjects).forEach(key => {
+            if (!state.entities.some(entity => String(entity.id) === key)) {
+                const object = this.tickObjects[key]
+                delete this.tickObjects[key]
+                this.scene.remove(object)
+            }
         })
 
+        // console.log("--STATE--", state)
         state.entities.forEach((entity) => {
-            let object = this.tickObjects.find(obj => obj.userData.id === entity.id);
+            let object = this.tickObjects[entity.id]
 
             if (object) {
                 this.updateObject(object, entity)
@@ -465,28 +501,101 @@ export class Player {
                 // this.scene.add(lines)
             }
 
-        })
-    }
+         })
 
-    // private newText(text: string, material: Array<THREE.MeshPhongMaterial> = this.lettersMaterial) {
-    //     return new THREE.Mesh(
-    //         new TextGeometry(text, {
-    //             font: this.font,
-    //             size: 11,
-    //             height: 4,
-    //             curveSegments: 40,
-    //             bevelThickness: 0.5,
-    //             bevelSize: 0.1,
-    //             bevelEnabled: true
-    //         }),
-    //         material
-    //     )
-    // }
+        if (!(nextState == null)) {
+            // TODO: discuss nextState and state
+            this.renderAttacks(nextState)
+            this.renderRepairs(nextState)
+            this.renderBuilds(state)
+        }
+    }
 
     private piecesMaterials = {
         Green: new THREE.MeshPhongMaterial({color: 0x00ff00, flatShading: true}),
         Yellow: new THREE.MeshPhongMaterial({color: 0xffff00, flatShading: true}),
         Red: new THREE.MeshPhongMaterial({color: 0xff0000, flatShading: true}),
+    }
+
+    private renderAttacks(state: botCraft.State) {
+        for (let key of Object.keys(this.tickActions.attacks)) {
+            if (!(state.appliedAttacks.some(appliedAttack => String(appliedAttack.attackerId) === key))) {
+                const attack = this.tickActions.attacks[key]
+                delete this.tickActions.attacks[key]
+                this.scene.remove(attack)
+            }
+        }
+
+        for (let appliedAttack of state.appliedAttacks) {
+            let action = this.tickActions.attacks[appliedAttack.attackerId]
+            if (action) {
+                const targetId = action.userData.targetId
+                if (targetId === appliedAttack.targetId) {
+                    continue
+                }
+                if (!(targetId === appliedAttack.targetId)) {
+                    delete this.tickActions.attacks[appliedAttack.attackerId]
+                    this.scene.remove(action)
+                }
+            }
+            const attacker = this.tickObjects[appliedAttack.attackerId]
+            const target = this.tickObjects[appliedAttack.targetId]
+            this.renderAction(attacker, target, attackColor, "attacks")
+        }
+    }
+
+    private renderRepairs(state: botCraft.State) {
+        for (let key of Object.keys(this.tickActions.repairs)) {
+            if (!(state.appliedRepairs.some(item => String(item.repairerId) === key))) {
+                const repair = this.tickActions.repairs[key]
+                delete this.tickActions.repairs[key]
+                this.scene.remove(repair)
+            }
+        }
+
+        for (let appliedRepair of state.appliedRepairs) {
+            let action = this.tickActions.repairs[appliedRepair.repairerId]
+            if (action) {
+                const targetId = action.userData.targetId
+                if (targetId === appliedRepair.targetId) {
+                    continue
+                }
+                if (!(targetId === appliedRepair.targetId)) {
+                    delete this.tickActions.repairs[appliedRepair.repairerId]
+                    this.scene.remove(action)
+                }
+            }
+            const repairer = this.tickObjects[appliedRepair.repairerId]
+            const target = this.tickObjects[appliedRepair.targetId]
+            this.renderAction(repairer, target, repairColor, "repairs")
+        }
+    }
+
+    private renderBuilds(state: botCraft.State) {
+        for (let key of Object.keys(this.tickActions.builds)) {
+            if (!(state.appliedBuilds.some(item => String(item.builderId) === key))) {
+                const build = this.tickActions.builds[key]
+                delete this.tickActions.builds[key]
+                this.scene.remove(build)
+            }
+        }
+
+        for (let appliedBuild of state.appliedBuilds) {
+            let action = this.tickActions.builds[appliedBuild.builderId]
+            if (action) {
+                const targetId = action.userData.targetId
+                if (targetId === appliedBuild.targetId) {
+                    continue
+                }
+                if (!(targetId === appliedBuild.targetId)) {
+                    delete this.tickActions.builds[appliedBuild.builderId]
+                    this.scene.remove(action)
+                }
+            }
+            const builder = this.tickObjects[appliedBuild.builderId]
+            const target = this.tickObjects[appliedBuild.targetId]
+            this.renderAction(builder, target, buildColor, "builds")
+        }
     }
 
     private createObject(entity: botCraft.IEntity, textureMaterial: THREE.MeshBasicMaterial) {
@@ -521,7 +630,7 @@ export class Player {
         this.setOpacity(object, entity.active)
 
         this.scene.add(object)
-        this.tickObjects.push(object)
+        this.tickObjects[object.userData.id] = object
         return object
     }
 
