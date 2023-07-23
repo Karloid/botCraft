@@ -42,8 +42,11 @@ type GamesDataGameV1 = {
     ticks: GamesDataTickV1[]
 }
 
-interface NumberMap {
+interface StringMap {
     [key: string]: number
+}
+interface NumberMap {
+    [key: number]: number
 }
 
 // TODO: change colors
@@ -64,14 +67,19 @@ const buildColor = 0x0000ff
 const gridColor = 0xffffff
 const gridLineWidth = 1
 const geometryOffset = 0.2
-const IDToUnitColor: NumberMap = {
+const IDToUnitColor: StringMap = {
     "0": 0x0000ff,
     "1": 0xff0000,
     "-1": 0x00ff00,
 }
-// TODO:
+const speedMap: NumberMap = {
+    1: 200,
+    2: 100,
+    3: 50,
+    4: 25,
+}
 
-// 1. add health decreasing
+const maxSpeed = 4
 export class Player {
     private readonly container: HTMLElement
     private readonly options: Options
@@ -82,6 +90,9 @@ export class Player {
         curTick: number
         play: Function
         pause: Function
+        speed: Function
+        curSpeed: number
+        curTimeout: number
     }
     private readonly clock = new THREE.Clock()
     private readonly scene: THREE.Scene
@@ -264,6 +275,7 @@ export class Player {
         let curTickCtrl: Controller
         let playBtn: Controller
         let pauseBtn: Controller
+        let speedBtn: Controller
 
         this.settings = {
             curTick: 0,
@@ -286,14 +298,24 @@ export class Player {
                         playBtn.show()
                     }
 
-                    window.setTimeout(play, 200)
+                    window.setTimeout(play, this.settings.curTimeout)
                 }
                 play()
             },
             pause() {
                 pauseBtn.hide()
                 playBtn.show()
-            }
+            },
+            curSpeed: 1,
+            curTimeout: 200,
+            speed: () => {
+                this.settings.curSpeed++
+                if (this.settings.curSpeed > maxSpeed) {
+                    this.settings.curSpeed = 1
+                }
+                this.settings.curTimeout = speedMap[this.settings.curSpeed]
+                speedBtn.name(`Change speed: ${this.settings.curSpeed}`)
+            },
         }
 
         const panel = new GUI({
@@ -370,6 +392,9 @@ export class Player {
         pauseBtn = panel.add(this.settings, 'pause')
             .name('Pause')
             .hide()
+
+        speedBtn = panel.add(this.settings, 'speed')
+            .name(`Change speed: ${this.settings.curSpeed}`)
 
         window.addEventListener('resize', () => {
             this.container.style.height = (this.container.clientWidth / 2).toString().concat('px')
