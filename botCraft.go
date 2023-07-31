@@ -572,15 +572,14 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 		}
 
 		// check enough resources to build
-		// TODO add cost per each created entity
-		if playersById[builder.PlayerId].Resources < buildSize {
-			log.Println("not enough resources to build entity=", entityTypeToBuild.String(), "playerId=", builder.PlayerId)
-			// TODO log error to player response
-			continue
+		buildCost := entitiesProperties[entityTypeToBuild].Cost
+		for _, e := range entitiesById {
+			if (e.PlayerId == builder.PlayerId) && (e.EntityType == entityTypeToBuild) {
+				buildCost += 1
+			}
 		}
 
-		entityToBuildCost := entitiesProperties[entityTypeToBuild].Cost
-		if playersById[builder.PlayerId].Resources < entityToBuildCost {
+		if playersById[builder.PlayerId].Resources < buildCost {
 			log.Println("not enough resources to build entity=", entityTypeToBuild.String(), "playerId=", builder.PlayerId)
 			// TODO log error to player response
 			continue
@@ -629,13 +628,20 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 		// check builder is adjacent to build position
 		distanceToEntityToBuild := distanceTo(&entitiesProperties, options, builder, entityTypeToBuild, positionToBuild)
 		if distanceToEntityToBuild > 1 {
-			log.Println("builder is not adjacent to build position entity=", entityTypeToBuild.String(), "playerId=", builder.PlayerId, "distance=", distanceToEntityToBuild)
+			log.Println("builder is not adjacent to build position buildType=",
+				entityTypeToBuild.String(),
+				"builderType=", builder.EntityType.String(),
+				"builderPos=[", builder.Position.X, builder.Position.Y,
+				"] positionToBuild=[", positionToBuild.X, positionToBuild.Y,
+				"] playerId=",
+				builder.PlayerId,
+				"distance=",
+				distanceToEntityToBuild)
 			continue
 		}
 
 		// build
-		playersById[builder.PlayerId].Resources -= buildSize
-		// TODO add active status and proper initial health
+
 		initialHealth := entitiesProperties[action.EntityAction.BuildAction.EntityType].MaxHealth
 		active := true
 		if builderProp.BuildProperties.InitHealth != nil {
@@ -659,7 +665,7 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 		state.Entities = append(state.Entities, newEntity)
 
 		// consume resources
-		playersById[builder.PlayerId].Resources -= entityToBuildCost
+		playersById[builder.PlayerId].Resources -= buildCost
 
 		// add score
 		playersById[builder.PlayerId].Score += entitiesProperties[entityTypeToBuild].BuildScore
@@ -676,6 +682,7 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 			builder.PlayerId,
 			"id=",
 			newEntity.Id,
+			"cost=", buildCost,
 			"current Population=",
 			playerCurrentPopulation+populationUse,
 			"allowed Population=",
