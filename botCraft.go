@@ -15,22 +15,19 @@ import (
 
 type BotCraft struct{}
 
-// TODO DELETEME implement proper map generation
 func (s BotCraft) Init() (proto.Message, proto.Message, uint8) {
 	maxMapSize := int32(32)
 
 	players := make([]*pb.Player, 0)
 
 	players = append(players, &pb.Player{
-		Id:        0,
-		Score:     0,
-		Resources: 0,
+		Id:    0,
+		Score: 0,
 	})
 
 	players = append(players, &pb.Player{
-		Id:        1,
-		Score:     0,
-		Resources: 0,
+		Id:    1,
+		Score: 0,
 	})
 
 	entityProperties := s.fillEntityProperties()
@@ -71,7 +68,7 @@ func (s BotCraft) generateResources(entitiesById *map[int32]*pb.Entity, nextId i
 
 	existingResources := make(map[GamePoint2D]bool)
 
-	resourceSize := (*entityProperties)[pb.EntityType_RESOURCE].Size
+	resourceSize := (*entityProperties)[pb.EntityType_MINERALS].Size
 
 	forestMap := make(map[GamePoint2D]bool)
 	forestMap = generateForestMap(mapSize, forestMap)
@@ -94,12 +91,14 @@ func (s BotCraft) generateResources(entitiesById *map[int32]*pb.Entity, nextId i
 			existingResources[pos] = true
 
 			entityCandidate := &pb.Entity{
-				Id:         nextId,
-				PlayerId:   -1,
-				EntityType: pb.EntityType_RESOURCE,
-				Position:   pos.toPb(),
-				Health:     30,
-				Active:     true,
+				Id:              nextId,
+				PlayerId:        -1,
+				EntityType:      pb.EntityType_MINERALS,
+				Position:        pos.toPb(),
+				Health:          30,
+				Active:          true,
+				CarriedMinerals: 0,
+				CarriedGas:      0,
 			}
 
 			s.putEntityToSurface(pos, resourceSize, entitiesSurface, entityCandidate)
@@ -120,7 +119,7 @@ func (s BotCraft) generateResources(entitiesById *map[int32]*pb.Entity, nextId i
 			entityCandidate := &pb.Entity{
 				Id:         nextId,
 				PlayerId:   -1,
-				EntityType: pb.EntityType_RESOURCE,
+				EntityType: pb.EntityType_MINERALS,
 				Position:   mirroredPos.toPb(),
 				Health:     30,
 				Active:     true,
@@ -327,10 +326,12 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 	pendingBuildActions := make([]*EntityIdPlusAction, 0)
 	pendingAttackActions := make([]*EntityIdPlusAction, 0)
 	pendingRepairActions := make([]*EntityIdPlusAction, 0)
+	pendingTransferResourcesActions := make([]*EntityIdPlusAction, 0)
 
 	appliedAttacks := make([]*pb.AppliedAttack, 0)
 	appliedRepairs := make([]*pb.AppliedRepair, 0)
 	appliedBuilds := make([]*pb.AppliedBuild, 0)
+	appliedTransferResources := make([]*pb.AppliedTransferResources, 0)
 
 	for _, action := range actions {
 		pbAction := action.Action.(*pb.Action)
@@ -387,6 +388,11 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 				pendingAttackActions = append(pendingAttackActions, &entityIdPlusAction)
 			} else if entityAction.RepairAction != nil {
 				pendingRepairActions = append(pendingRepairActions, &entityIdPlusAction)
+			} else if entityAction.TransferResourcesAction != nil {
+				pendingTransferResourcesActions = append(pendingTransferResourcesActions, &entityIdPlusAction)
+			} else {
+				// TODO log error to player response
+				log.Println("ignore action: Unknown action", entityId)
 			}
 		}
 	}
@@ -403,10 +409,8 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 		len(pendingAttackActions),
 		"RepairActions:",
 		len(pendingRepairActions),
-		"Player[0] resources:",
-		state.Players[0].Resources,
-		"[1]:",
-		state.Players[1].Resources,
+		"TransferResourcesActions:",
+		len(pendingTransferResourcesActions),
 	)
 
 	// apply steps
@@ -504,10 +508,11 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 
 			// collect resources
 			targetProperties := entitiesProperties[target.EntityType]
-			resources := targetProperties.ResourcePerHealth * actualDamage
+			collectedMinerals := targetProperties.MineralsPerHealth * actualDamage
+			collectedGas := targetProperties.GasPerHealth * actualDamage
 			if entityProperties.AttackProperties.CollectResource {
-				player := playersById[entity.PlayerId]
-				player.Resources += resources
+				entity.CarriedMinerals = minOf(entity.CarriedMinerals+collectedMinerals, entityProperties.MaxCarriedMinerals)
+				entity.CarriedGas += minOf(entity.CarriedGas+collectedGas, entityProperties.MaxCarriedGas)
 			}
 
 			appliedAttacks = append(appliedAttacks, &pb.AppliedAttack{
@@ -527,7 +532,7 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 	// remove dead units
 	for _, entity := range entitiesById {
 		if entity.Health <= 0 {
-			if entity.EntityType != pb.EntityType_RESOURCE {
+			if entity.EntityType != pb.EntityType_MINERALS {
 				println("dead entity=", entity.Id, "type", entity.EntityType.String(),
 					"pos", entity.Position.X, entity.Position.Y, "playerId", entity.PlayerId)
 			}
@@ -542,6 +547,41 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 				}
 			}
 		}
+	}
+
+	// transfer resources
+	for _, action := range pendingTransferResourcesActions {
+		sourceEntity, ok := entitiesById[action.EntityId]
+		if !ok {
+			log.Println("sourceEntity is dead probably or not existent id=", action.EntityId)
+			continue
+		}
+		targetEntity, ok := entitiesById[action.EntityAction.TransferResourcesAction.TargetId]
+		if !ok {
+			log.Println("target is dead probably or not found id=", action.EntityAction.RepairAction.TargetId)
+			continue
+		}
+
+		if sourceEntity.PlayerId != targetEntity.PlayerId {
+			log.Println("repairer and target are not owned by same player", "repairer.PlayerId=", sourceEntity.PlayerId, "target.PlayerId=", targetEntity.PlayerId)
+			continue
+		}
+
+		sourceEntityProp := entitiesProperties[sourceEntity.EntityType]
+		if sourceEntityProp.TransferResourcesProperties == nil {
+			log.Println("sourceEntity can't transfer anything=", sourceEntityProp.EntityType.String(), "entityId=", sourceEntity.Id)
+			continue
+		}
+
+		// check sourceEntity had enough range
+		distanceToTarget := distanceNoObstracles(sourceEntity, targetEntity, &entitiesProperties)
+		if distanceToTarget > sourceEntityProp.TransferResourcesProperties.MaxTransferRange {
+			log.Println("sourceEntity: not enough range to transfer", "sourceEntityId=", sourceEntity.Id, "targetId=", targetEntity.Id, "distance=", distanceToTarget)
+			continue
+		}
+		// TODO actual transfer of resources
+		// TODO check if targetEntity can receive resources
+		// TODO check if sourceEntity has enough resources
 	}
 
 	// build
@@ -572,15 +612,27 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 		}
 
 		// check enough resources to build
-		buildCost := entitiesProperties[entityTypeToBuild].Cost
+		buildCostMinerals := entitiesProperties[entityTypeToBuild].CostMinerals
+		buildCostGas := entitiesProperties[entityTypeToBuild].CostGas
 		for _, e := range entitiesById {
 			if (e.PlayerId == builder.PlayerId) && (e.EntityType == entityTypeToBuild) {
-				buildCost += 1
+				if buildCostMinerals > 0 {
+					buildCostMinerals += 1
+				}
+				if buildCostGas > 0 {
+					buildCostGas += 1
+				}
 			}
 		}
 
-		if playersById[builder.PlayerId].Resources < buildCost {
-			log.Println("not enough resources to build entity=", entityTypeToBuild.String(), "playerId=", builder.PlayerId)
+		if builder.CarriedMinerals < buildCostMinerals {
+			log.Println("not enough minerals to build entity=", entityTypeToBuild.String(), "playerId=", builder.PlayerId)
+			// TODO log error to player response
+			continue
+		}
+
+		if builder.CarriedGas < buildCostGas {
+			log.Println("not enough minerals to build entity=", entityTypeToBuild.String(), "playerId=", builder.PlayerId)
 			// TODO log error to player response
 			continue
 		}
@@ -626,7 +678,7 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 		}
 
 		// check builder is adjacent to build position
-		distanceToEntityToBuild := distanceTo(&entitiesProperties, options, builder, entityTypeToBuild, positionToBuild)
+		distanceToEntityToBuild := distanceTo(&entitiesProperties, builder, entityTypeToBuild, positionToBuild)
 		if distanceToEntityToBuild > 1 {
 			log.Println("builder is not adjacent to build position buildType=",
 				entityTypeToBuild.String(),
@@ -665,7 +717,8 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 		state.Entities = append(state.Entities, newEntity)
 
 		// consume resources
-		playersById[builder.PlayerId].Resources -= buildCost
+		builder.CarriedMinerals -= buildCostMinerals
+		builder.CarriedGas -= buildCostGas
 
 		// add score
 		playersById[builder.PlayerId].Score += entitiesProperties[entityTypeToBuild].BuildScore
@@ -682,7 +735,8 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 			builder.PlayerId,
 			"id=",
 			newEntity.Id,
-			"cost=", buildCost,
+			"costMinerals=", buildCostMinerals,
+			"costGas=", buildCostMinerals,
 			"current Population=",
 			playerCurrentPopulation+populationUse,
 			"allowed Population=",
@@ -719,7 +773,7 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 		}
 
 		// check repairer is adjacent to target
-		distanceToTarget := distanceTo(&entitiesProperties, options, repairer, target.EntityType, target.Position)
+		distanceToTarget := distanceTo(&entitiesProperties, repairer, target.EntityType, target.Position)
 		if distanceToTarget > 1 {
 			log.Println("repairer is not adjacent to target", "repairerId=", repairer.Id, "targetId=", target.Id, "distance=", distanceToTarget)
 			continue
@@ -767,6 +821,7 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 	state.AppliedBuilds = appliedBuilds
 	state.AppliedRepairs = appliedRepairs
 	state.AppliedAttacks = appliedAttacks
+	state.AppliedTransferResources = appliedTransferResources
 
 	// TODO check if entities are all dead
 	if state.Tick >= options.MaxTickCount {
@@ -798,7 +853,7 @@ func (s BotCraft) ApplyActions(tickInfo *manager.TickInfo, actions []manager.Act
 	}
 }
 
-func distanceTo(entitiesProperties *map[pb.EntityType]*pb.EntityProperties, options *pb.Options, builder *pb.Entity, buildEntityType pb.EntityType, buildPos *pb.Point2D) int32 {
+func distanceTo(entitiesProperties *map[pb.EntityType]*pb.EntityProperties, builder *pb.Entity, buildEntityType pb.EntityType, buildPos *pb.Point2D) int32 {
 	builderSize := (*entitiesProperties)[builder.EntityType].Size
 	buildSize := (*entitiesProperties)[buildEntityType].Size
 	distance := int32(math.MaxInt32)
@@ -911,43 +966,51 @@ func (s BotCraft) generateBases(players []*pb.Player, entitiesById *map[int32]*p
 		if index == 0 {
 
 			s.placeEntity(entitiesSurface, entitiesById, entityProperties, &pb.Entity{
-				Id:         nextId,
-				PlayerId:   player.Id,
-				EntityType: pb.EntityType_BUILDER_BASE,
-				Position:   GamePoint2D{X: 1, Y: 1}.toPb(),
-				Health:     100,
-				Active:     true,
+				Id:              nextId,
+				PlayerId:        player.Id,
+				EntityType:      pb.EntityType_BUILDER_BASE,
+				Position:        GamePoint2D{X: 1, Y: 1}.toPb(),
+				Health:          100,
+				Active:          true,
+				CarriedMinerals: 10,
+				CarriedGas:      10,
 			})
 			nextId++
 
 			// generate couple of builders
 			s.placeEntity(entitiesSurface, entitiesById, entityProperties, &pb.Entity{
-				Id:         nextId,
-				PlayerId:   player.Id,
-				EntityType: pb.EntityType_BUILDER_UNIT,
-				Position:   GamePoint2D{X: 5, Y: 4}.toPb(),
-				Health:     (*entityProperties)[pb.EntityType_BUILDER_UNIT].MaxHealth,
-				Active:     true,
+				Id:              nextId,
+				PlayerId:        player.Id,
+				EntityType:      pb.EntityType_BUILDER_UNIT,
+				Position:        GamePoint2D{X: 5, Y: 4}.toPb(),
+				Health:          (*entityProperties)[pb.EntityType_BUILDER_UNIT].MaxHealth,
+				Active:          true,
+				CarriedMinerals: 0,
+				CarriedGas:      0,
 			})
 			nextId++
 
 			s.placeEntity(entitiesSurface, entitiesById, entityProperties, &pb.Entity{
-				Id:         nextId,
-				PlayerId:   player.Id,
-				EntityType: pb.EntityType_BUILDER_UNIT,
-				Position:   GamePoint2D{X: 4, Y: 5}.toPb(),
-				Health:     (*entityProperties)[pb.EntityType_BUILDER_UNIT].MaxHealth,
-				Active:     true,
+				Id:              nextId,
+				PlayerId:        player.Id,
+				EntityType:      pb.EntityType_BUILDER_UNIT,
+				Position:        GamePoint2D{X: 4, Y: 5}.toPb(),
+				Health:          (*entityProperties)[pb.EntityType_BUILDER_UNIT].MaxHealth,
+				Active:          true,
+				CarriedMinerals: 0,
+				CarriedGas:      0,
 			})
 			nextId++
 
 			s.placeEntity(entitiesSurface, entitiesById, entityProperties, &pb.Entity{
-				Id:         nextId,
-				PlayerId:   player.Id,
-				EntityType: pb.EntityType_TURRET,
-				Position:   GamePoint2D{X: 5, Y: 5}.toPb(),
-				Health:     (*entityProperties)[pb.EntityType_TURRET].MaxHealth,
-				Active:     true,
+				Id:              nextId,
+				PlayerId:        player.Id,
+				EntityType:      pb.EntityType_TURRET,
+				Position:        GamePoint2D{X: 5, Y: 5}.toPb(),
+				Health:          (*entityProperties)[pb.EntityType_TURRET].MaxHealth,
+				Active:          true,
+				CarriedMinerals: 0,
+				CarriedGas:      0,
 			})
 			nextId++
 		} else {
@@ -962,12 +1025,14 @@ func (s BotCraft) generateBases(players []*pb.Player, entitiesById *map[int32]*p
 			for _, entity := range entitiesOfFirstPlayer {
 				entitySize := (*entityProperties)[entity.EntityType].Size
 				s.placeEntity(entitiesSurface, entitiesById, entityProperties, &pb.Entity{
-					Id:         nextId,
-					PlayerId:   player.Id,
-					EntityType: entity.EntityType,
-					Position:   GamePoint2D{X: mapSize - entity.Position.X - entitySize, Y: mapSize - entity.Position.Y - entitySize}.toPb(),
-					Health:     entity.Health,
-					Active:     entity.Active,
+					Id:              nextId,
+					PlayerId:        player.Id,
+					EntityType:      entity.EntityType,
+					Position:        GamePoint2D{X: mapSize - entity.Position.X - entitySize, Y: mapSize - entity.Position.Y - entitySize}.toPb(),
+					Health:          entity.Health,
+					Active:          entity.Active,
+					CarriedMinerals: entity.CarriedMinerals,
+					CarriedGas:      entity.CarriedGas,
 				})
 				nextId++
 			}

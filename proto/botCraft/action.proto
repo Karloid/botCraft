@@ -21,6 +21,7 @@ message EntityAction {
   BuildAction build_action = 2;
   AttackAction attack_action = 3;
   RepairAction repair_action = 4;
+  TransferResourcesAction transfer_resources_action = 5;
 }
 
 message MoveAction {
@@ -36,7 +37,7 @@ message BuildAction {
 
 message AttackAction {
   Int32Value targetId = 1;
-  AutoAttack auto_attack = 2;
+  //AutoAttack auto_attack = 2;
 }
 
 message AutoAttack {
@@ -46,4 +47,10 @@ message AutoAttack {
 
 message RepairAction {
   int32 target_id = 1;
+}
+
+message TransferResourcesAction {
+  int32 target_id = 1;
+  int32 mineralAmount = 2;
+  int32 gasAmount = 3;
 }
