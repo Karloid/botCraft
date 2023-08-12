@@ -191,7 +191,8 @@ public class Strategy {
                     continue;
                 }
 
-                if (distanceToEntity(gameOptions, entity, entity.entityType, point) > 1) {
+                // TODO check both entities surface
+                if (distanceToEntity(gameOptions, entity, "MELEE_UNIT", point) > 1) {
                     continue;
                 }
                 if (allEntitiesMap.get(point) == null) {
@@ -207,6 +208,7 @@ public class Strategy {
         int toEntitySize = gameOptions.getEntityProperties(toEntityType).size;
         // for all cells of toEntity, find nearest and distance to it
         int minDistance = Integer.MAX_VALUE;
+        // TODO check both entities surface
         for (int i = 0; i < toEntitySize; i++) {
             for (int j = 0; j < toEntitySize; j++) {
                 int distance = fromEntity.position.distance(new Api.Point2D(toEntityPos.x + i, toEntityPos.y + j));

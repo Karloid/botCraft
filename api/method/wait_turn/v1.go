@@ -21,12 +21,14 @@ type point2DV1 struct {
 }
 
 type entityV1 struct {
-	Id         int32     `json:"id"`
-	PlayerId   int32     `json:"player_id"`
-	EntityType string    `json:"entity_type"`
-	Health     int32     `json:"health"`
-	Position   point2DV1 `json:"position"`
-	Active     bool      `json:"active"`
+	Id              int32     `json:"id"`
+	PlayerId        int32     `json:"player_id"`
+	EntityType      string    `json:"entity_type"`
+	Health          int32     `json:"health"`
+	Position        point2DV1 `json:"position"`
+	Active          bool      `json:"active"`
+	CarriedMinerals int32     `json:"carried_minerals"`
+	CarriedGas      int32     `json:"carried_gas"`
 }
 
 type playerV1 struct {
@@ -102,7 +104,9 @@ func (m *Method) V1(ctx context.Context, r *reqV1) (*stateV1, error) {
 				X: entity.Position.X,
 				Y: entity.Position.Y,
 			},
-			Active: entity.Active,
+			Active:          entity.Active,
+			CarriedMinerals: entity.CarriedMinerals,
+			CarriedGas:      entity.CarriedGas,
 		})
 	}
 
@@ -113,9 +117,8 @@ func (m *Method) V1(ctx context.Context, r *reqV1) (*stateV1, error) {
 			myPlayerId = i
 		}
 		players = append(players, &playerV1{
-			Id:        player.Id,
-			Score:     player.Score,
-			Resources: player.Resources,
+			Id:    player.Id,
+			Score: player.Score,
 		})
 	}
 	return &stateV1{

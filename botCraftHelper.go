@@ -21,7 +21,7 @@ func (s BotCraft) fillEntityProperties() []*pb.EntityProperties {
 		BuildScore:   10,
 		DestroyScore: 10,
 		MaxHealth:    50,
-		Cost:         10,
+		CostMinerals: 10,
 	})
 	entityProperties = append(entityProperties, &pb.EntityProperties{
 		EntityType:        pb.EntityType_HOUSE,
@@ -29,7 +29,7 @@ func (s BotCraft) fillEntityProperties() []*pb.EntityProperties {
 		BuildScore:        100,
 		DestroyScore:      1000,
 		MaxHealth:         100,
-		Cost:              100,
+		CostMinerals:      100,
 		PopulationProvide: 10,
 	})
 	entityProperties = append(entityProperties, &pb.EntityProperties{
@@ -38,7 +38,7 @@ func (s BotCraft) fillEntityProperties() []*pb.EntityProperties {
 		BuildScore:        40,
 		DestroyScore:      40,
 		MaxHealth:         100,
-		Cost:              50,
+		CostMinerals:      50,
 		PopulationProvide: 5,
 		BuildProperties: &pb.BuildProperties{
 			Options:    []pb.EntityType{pb.EntityType_BUILDER_UNIT},
@@ -50,7 +50,7 @@ func (s BotCraft) fillEntityProperties() []*pb.EntityProperties {
 		BuildScore:        10,
 		DestroyScore:      10,
 		MaxHealth:         50,
-		Cost:              10,
+		CostMinerals:      10,
 		PopulationProvide: 0,
 		PopulationUse:     1,
 		CanMove:           true,
@@ -88,7 +88,7 @@ func (s BotCraft) fillEntityProperties() []*pb.EntityProperties {
 		BuildScore:        40,
 		DestroyScore:      40,
 		MaxHealth:         100,
-		Cost:              50,
+		CostMinerals:      50,
 		PopulationProvide: 5,
 		BuildProperties: &pb.BuildProperties{
 			Options:    []pb.EntityType{pb.EntityType_MELEE_UNIT},
@@ -102,7 +102,7 @@ func (s BotCraft) fillEntityProperties() []*pb.EntityProperties {
 		BuildScore:        10,
 		DestroyScore:      10,
 		MaxHealth:         50,
-		Cost:              10,
+		CostMinerals:      10,
 		PopulationProvide: 0,
 		PopulationUse:     1,
 		CanMove:           true,
@@ -119,7 +119,7 @@ func (s BotCraft) fillEntityProperties() []*pb.EntityProperties {
 		BuildScore:        40,
 		DestroyScore:      40,
 		MaxHealth:         100,
-		Cost:              50,
+		CostMinerals:      50,
 		PopulationProvide: 5,
 		BuildProperties: &pb.BuildProperties{
 			Options:    []pb.EntityType{pb.EntityType_RANGED_UNIT},
@@ -133,7 +133,7 @@ func (s BotCraft) fillEntityProperties() []*pb.EntityProperties {
 		BuildScore:        10,
 		DestroyScore:      10,
 		MaxHealth:         50,
-		Cost:              10,
+		CostMinerals:      10,
 		PopulationProvide: 0,
 		PopulationUse:     1,
 		CanMove:           true,
@@ -145,10 +145,10 @@ func (s BotCraft) fillEntityProperties() []*pb.EntityProperties {
 	})
 
 	entityProperties = append(entityProperties, &pb.EntityProperties{
-		EntityType:        pb.EntityType_RESOURCE,
+		EntityType:        pb.EntityType_MINERALS,
 		Size:              1,
 		MaxHealth:         30,
-		ResourcePerHealth: 1,
+		MineralsPerHealth: 1,
 	})
 
 	entityProperties = append(entityProperties, &pb.EntityProperties{
@@ -157,7 +157,7 @@ func (s BotCraft) fillEntityProperties() []*pb.EntityProperties {
 		BuildScore:        10,
 		DestroyScore:      10,
 		MaxHealth:         50,
-		Cost:              10,
+		CostMinerals:      10,
 		PopulationProvide: 0,
 		PopulationUse:     1,
 		AttackProperties: &pb.AttackProperties{

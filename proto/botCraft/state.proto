@@ -14,12 +14,12 @@ message State {
   repeated AppliedAttack appliedAttacks = 6;
   repeated AppliedRepair appliedRepairs = 7;
   repeated AppliedBuild appliedBuilds = 8;
+  repeated AppliedTransferResources appliedTransferResources = 9;
 }
 
 message Player {
   int32 id = 1;
   int32 score = 2;
-  int32 resources = 3;
 }
 
 message Point2D {
@@ -34,6 +34,8 @@ message Entity {
   int32 health = 4;
   Point2D position = 5;
   bool active = 6;
+  int32 carriedMinerals = 7;
+  int32 carriedGas = 8;
 }
 
 message AppliedAttack {
@@ -52,4 +54,12 @@ message AppliedBuild {
   int32 builderId = 1;
   int32 targetId = 2;
 }
+
+message AppliedTransferResources {
+  int32 sourceId = 1;
+  int32 targetId = 2;
+  int32 mineralsAmount = 3;
+  int32 gasAmount = 4;
+}
+
 
