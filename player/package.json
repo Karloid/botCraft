@@ -8,7 +8,7 @@
     "proto": "pbjs -t static-module -w es6 -o src/proto/botCraft.js  ../proto/botCraft/*.proto && pbts -o src/proto/botCraft.d.ts src/proto/botCraft.js"
   },
   "devDependencies": {
-    "@types/three": "^0.150.1",
+    "@types/three": "^0.150.2",
     "json-loader": "^0.5.7",
     "protobufjs": "^6.11.3",
     "terser-webpack-plugin": "^5.3.7",

@@ -1,5 +1,7 @@
 import * as THREE from 'three'
 import {TextGeometry} from "three/examples/jsm/geometries/TextGeometry"
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+import { MOUSE } from 'three'
 import {Controller, GUI} from 'three/examples/jsm/libs/lil-gui.module.min'
 import {Font, FontLoader} from "three/examples/jsm/loaders/FontLoader"
 import fontJson from './assets/Roboto_Regular.json'
@@ -98,6 +100,7 @@ export class Player {
     private readonly scene: THREE.Scene
     private readonly camera: THREE.PerspectiveCamera
     private readonly renderer: THREE.WebGLRenderer
+    private readonly controls: OrbitControls
     private readonly font: Font
     private pieces: { [key: number]: THREE.Mesh } = {}
     private curUserPointer: THREE.Mesh
@@ -145,13 +148,21 @@ export class Player {
         this.scene = new THREE.Scene()
 
         this.camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.offsetHeight, 1, 1000)
-        this.camera.position.set(mapSize / 2, mapSize / 2, 30)
-        this.camera.lookAt(mapSize / 2, mapSize / 2, 0)
 
         this.renderer = new THREE.WebGLRenderer({antialias: true})
         this.renderer.setSize(container.clientWidth, container.offsetHeight)
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping
         container.appendChild(this.renderer.domElement)
+
+        this.controls = new OrbitControls( this.camera, this.renderer.domElement );
+        this.controls.enableDamping = true
+        this.controls.target.set(mapSize/2, mapSize/2, 0)
+        this.controls.maxDistance = 40
+        this.controls.minDistance = 5
+        this.controls.mouseButtons = { LEFT: MOUSE.PAN, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN };
+
+        this.camera.position.set(mapSize/2 , mapSize/2, 30)
+        this.controls.update()
 
         const fontLoader = new FontLoader()
         this.font = fontLoader.parse(fontJson)
@@ -410,8 +421,7 @@ export class Player {
             this.animate()
         })
 
-        // const delta = this.clock.getDelta()
-
+        this.updateCamera()
         this.renderer.render(this.scene, this.camera)
     }
 
@@ -419,6 +429,22 @@ export class Player {
         new THREE.MeshPhongMaterial({color: 0x555555, flatShading: true}), // front
         new THREE.MeshPhongMaterial({color: 0x888888}) // side
     ]
+
+    private updateCamera() {
+        const cur_x = this.controls.target.x
+        const cur_y = this.controls.target.y
+        const mapSize = this.options.mapSize
+        if (cur_x > mapSize || cur_x < 0) {
+            this.controls.target.x = this.controls.target.x > 0 ? mapSize : 0
+            this.camera.position.x = this.controls.target.x > 0 ? mapSize : 0
+        }
+        if (cur_y > mapSize || cur_y < 0) {
+            this.controls.target.y = this.controls.target.y > 0 ? mapSize : 0
+            this.camera.position.y = this.controls.target.y > 0 ? mapSize : 0
+        }
+
+        this.controls.update()
+    }
 
     private createHelperText(text: string, size: number) {
         return new THREE.Mesh(
