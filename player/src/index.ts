@@ -155,7 +155,7 @@ export class Player {
         container.appendChild(this.renderer.domElement)
 
         this.controls = new OrbitControls( this.camera, this.renderer.domElement );
-        this.controls.enableDamping = true
+        this.controls.enableDamping = false
         this.controls.target.set(mapSize/2, mapSize/2, 0)
         this.controls.maxDistance = 40
         this.controls.minDistance = 5
